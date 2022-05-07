@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+sub main {
+    my $ip      = $ARGV[0] || '127.0.0.1';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    print("DEBUG: server ip:$ip\n");
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    #$tagent->updateCred($authKey);
+
+    print("INFO: test execute remote commad.\n");
+    #$tagent->execCmd( 'app', 'set MW_HOME=C:\wls\wls1036_dev && C:\wls\domains\tsdomain\bin\stopManagedWebLogic.cmd svr1', 1 );
+    #$tagent->execCmdAsync( 'app', 'cmd /c "set MW_HOME=C:\wls\wls1036_dev && C:\wls\domains\tsdomain\bin\startManagedWebLogic.cmd svr1"', 1);
+    $tagent->execCmdAsync( 'app', 'set MW_HOME=C:\wls\wls1036_dev && C:\wls\domains\tsdomain\bin\startManagedWebLogic.cmd svr1', 1);
+}
+
+main();
+

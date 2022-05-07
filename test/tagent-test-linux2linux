@@ -1,0 +1,62 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+sub main {
+    my $ip      = $ARGV[0] || '127.0.0.1';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    my $ret = $tagent->updateCred($authKey);
+
+    print("INFO: test execute reload.\n");
+
+    #my $ret = $tagent->reload( 1 );
+    print("Reload return: $ret\n");
+
+    print("INFO: test execute remote commad.\n");
+    my $ret = $tagent->execCmd( 'wenhb', "ls -l /tmp;ls -l /tmp;", 1 );
+    print("ExecCmd return: $ret\n");
+
+    print("INFO: test execute remote commad.\n");
+    my $ret = $tagent->execCmd( 'wenhb', "env", 1 );
+    print("ExecCmd return: $ret\n");
+
+    print("INFO: test upload file.\n");
+    $tagent->upload( 'wenhb', "/tmp/tagent.tar", "/home/wenhb/", 1 );
+
+    print("INFO: test upload file from url.\n");
+    $tagent->upload( 'wenhb', "http://127.0.0.1/test.tgz", "/tmp/", 1 );
+
+    print("INFO: test upload dir.\n");
+    $tagent->upload( 'wenhb', "/tmp/tagent", "/home/wenhb/",         1 );
+    $tagent->upload( 'wenhb', "/tmp/tagent", "/home/wenhb/tagent2/", 1 );
+
+    print("INFO: test download.\n");
+    $tagent->download( 'wenhb', "/home/wenhb/tagent.tar", "/tmp/", 1 );
+
+    print("INFO: test download dir.\n");
+    $tagent->download( 'wenhb', "/home/wenhb/tagent", "/tmp/", 1 );
+
+    print("INFO: test execute remote commad.\n");
+    $ret = $tagent->execCmd( 'wenhb', "ls -l /tmp;ls -l /tmp;", 1 );
+    print("ExecCmd return: $ret\n");
+
+    #print("INFO: test upload file.\n");
+    #$tagent->upload( 'wenhb', "http://192.168.0.130/test.tgz", "/home/wenhb/", 1 );
+}
+
+main();
+

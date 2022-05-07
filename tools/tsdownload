@@ -1,0 +1,34 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib/perl-lib/lib/perl5";
+
+use strict;
+use HTTP::Tiny;
+
+sub main {
+    my $pname = $FindBin::Script;
+    if ( scalar(@ARGV) ne 2 ) {
+        print("Usage: $pname <url> <save file name>\n");
+        exit(-1);
+    }
+
+    my $url  = $ARGV[0];
+    my $file = $ARGV[1];
+
+    my $http = HTTP::Tiny->new();
+    my $res = $http->mirror( $url, $file );
+
+    my $rc = 0;
+    if ( $res->{success} ) {
+        $rc = 0;
+    }
+    else {
+        $rc = 1;
+    }
+
+    return $rc;
+}
+
+exit main();
+

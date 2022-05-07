@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+sub main {
+    my $ip      = $ARGV[0] || '192.168.0.44';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    print("DEBUG: server ip:$ip\n");
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    my $ret;
+    #$tagent->updateCred($authKey);
+
+    #my $ret = $tagent->reload( 'root', 1 );
+    #print("INFO: reload success.\n") if ($ret eq 0);
+
+    #print("INFO: test execute remote commad.\n");
+    #$tagent->execCmd( 'administrator', "ping 127.0.0.1 -n 30",                                     1 );
+    #$ret = $tagent->execCmd( 'administrator', "dir C:\\tmp", 1 );
+    #print("exec cmd return: $ret\n");
+    #exit(0);
+
+    #print("INFO: test upload file.\n");
+    #$tagent->upload( 'app', "/tmp/Convert-EBCDIC-0.06.tar.gz", "C:\\tmp\\", 1 );
+
+    print("INFO: test upload file from url.\n");
+    $tagent->upload( 'wenhb', "http://127.0.0.1/test.tgz", "/tmp/", 1 );
+
+    #print("INFO: test upload dir.\n");
+    #$tagent->upload( 'app', "/tmp/Crypt-TripleDES-0.24", "C:\\tmp\\", 1 );
+    
+    #print("INFO: test upload dir.\n");
+    #$tagent->upload( 'app', "/tmp/上传测试", "C:\\tmp\\", 1 );
+
+    #print("INFO: test upload dir.\n");
+    #$tagent->upload( 'app', "/tmp/Crypt-TripleDES-0.24", "C:\\tmp\\", 1 );
+
+
+    #print("INFO: test download.\n");
+    #$tagent->download( 'app', "c:/tmp/Crypt-Perl-0.17.tar", "/home/wenhb/tmp/", 1 );
+
+    #print("INFO: test download dir.\n");
+    #$tagent->download( 'app', "c:\\tmp\\Crypt-Perl-0.17", "/home/wenhb/tmp/", 1 );
+
+    #print("INFO: test download dir.\n");
+    #$tagent->download( 'app', "c:\\tmp\\下载测试", "/home/wenhb/tmp/", 1 );
+
+    $ret = $tagent->execCmd( 'app', "dir C:\\tmp", 1 );
+    print("INFO test execute remote command:$ret\n");
+}
+
+main();
+

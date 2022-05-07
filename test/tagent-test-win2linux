@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+sub main {
+    my $ip      = $ARGV[0] || '127.0.0.1';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    print("DEBUG: server ip:$ip\n");
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    #$tagent->updateCred($authKey);
+
+    print("INFO: test execute remote commad.\n");
+    $tagent->execCmd( 'app', "ls -l /app/tmp/tmp", 1 );
+
+    print("INFO: test download.\n");
+    $tagent->download( 'app', "/app/tmp/tmp/Crypt-Perl-0.17.tar", "C:\\Users\\wenhb\\tmp\\", 1 );
+
+    print("INFO: test download dir.\n");
+    $tagent->download( 'app', "/app/tmp/tmp/Crypt-Perl-0.17", "C:\\Users\\wenhb\\tmp\\", 1 );
+
+    print("INFO: test upload file.\n");
+    $tagent->upload( 'app', "C:\\Users\\wenhb\\tmp\\Convert-EBCDIC-0.06.tar.gz", "/app/tmp/tmp/", 1 );
+
+    print("INFO: test upload dir.\n");
+    $tagent->upload( 'app', "C:\\Users\\wenhb\\tmp\\Crypt-TripleDES-0.24", "/app/tmp/tmp/", 1 );
+}
+
+main();
+

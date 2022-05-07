@@ -1,0 +1,308 @@
+=head2 Thu Nov 23 12:23:22 2017: C<Module> L<HTTP::Tiny|HTTP::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.070>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:37:33 2017: C<Module> L<HTTP::Tiny|HTTP::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.070>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:38:02 2017: C<Module> L<JSON|JSON>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.97000>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:38:02 2017: C<Module> L<HTTP::Tiny|HTTP::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.070>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:40:34 2017: C<Module> L<Config::Tiny|Config::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.23>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:40:34 2017: C<Module> L<JSON|JSON>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.97000>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:40:35 2017: C<Module> L<HTTP::Tiny|HTTP::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.070>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:40:45 2017: C<Module> L<Crypt::RC4::XS|Crypt::RC4::XS>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.02>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:43:33 2017: C<Module> L<Config::Tiny|Config::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.23>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:43:34 2017: C<Module> L<JSON|JSON>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 2.97000>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:43:34 2017: C<Module> L<HTTP::Tiny|HTTP::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.070>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Nov 23 12:43:35 2017: C<Module> L<Crypt::RC4::XS|Crypt::RC4::XS>
+
+=over 4
+
+=item *
+
+C<installed into: /home/wenhb/workspace/deploysys-v3/tools/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.02>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Wed Jan 24 14:51:25 2018: C<Module> L<PerlIO::via::Timeout|PerlIO::via::Timeout>
+
+=over 4
+
+=item *
+
+C<installed into: /opt/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.32>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Wed Jan 24 14:51:47 2018: C<Module> L<IO::Socket::Timeout|IO::Socket::Timeout>
+
+=over 4
+
+=item *
+
+C<installed into: /opt/tagent/lib/perl-lib/lib/perl5>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.32>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+

@@ -1,0 +1,20 @@
+[Unit]
+Description=Tagent Service
+After=syslog.target
+After=network.target
+
+[Service]
+LimitNOFILE=131072
+User=SUDO
+Type=simple
+Restart=always
+RestartSec=10
+EnvironmentFile=
+KillMode=process
+PIDFile=TAGENT_HOME/logs/tagent.pid
+ExecStart=TAGENT_BASE/bin/tagent server TAGENT_HOME
+ExecStop=TAGENT_BASE/bin/tagent stop TAGENT_HOME
+ExecReload=TAGENT_BASE/bin/tagent reload TAGENT_HOME
+
+[Install]
+WantedBy=multi-user.target

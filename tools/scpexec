@@ -1,0 +1,105 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib/perl-lib/lib/perl5";
+use lib "$FindBin::Bin/../lib/perl-lib/share/perl5";
+
+use strict;
+use Getopt::Long;
+use File::Basename;
+use Net::OpenSSH;
+
+sub usage {
+    my $pname = basename($0);
+
+    print("Usage: $pname [-v] [--preserve] [-h|--host <host>] [-p|--port <port>] [-u|--user <username>] [--pass <password>] [--pull] <src> <dest>\n");
+    print("       --preserve    : preserve the mode of file\n");
+    print("       --push: push from local site to remote site\n");
+    print("       --pull: pull from remote site to local site\n");
+
+    exit(-1);
+}
+
+sub main {
+    my ( $ishelp, $isPull, $isPreserve, $host, $port, $user, $pass, $src, $dest, $isVerbose, $isPreserve );
+
+    $isVerbose  = 0;
+    $isPreserve = 0;
+    $port       = 22;
+
+    GetOptions(
+        'help'      => \$ishelp,
+        'v|verbose' => \$isVerbose,
+        'pull'    => \$isPull,
+        'preserve'  => \$isPreserve,
+        'h|host:s'  => \$host,
+        'p|port:i'  => \$port,
+        'u|user:s'  => \$user,
+        'P|pass:s'  => \$pass,
+        '<>'        => \&pushItems
+    );
+
+    my @dirs;
+
+    sub pushItems {
+        my ($item) = @_;
+        push( @dirs, $item );
+    }
+
+    my $optionError = 0;
+
+    if ( not defined($host) or not defined($port) or not defined($user) ) {
+        $optionError = 1;
+    }
+
+    if ( defined($isPull) ) {
+        $isPull = 1;
+    }
+    else {
+        $isPull = 0;
+    }
+
+    if ( scalar(@dirs) < 2 ) {
+        print("ERROR: must define local path and remote path.\n");
+        $optionError = 1;
+    }
+
+    foreach my $dir (@dirs) {
+        if ( $dir =~ /\/\.\.\// or $dir =~ /^\.\.\// or $dir =~ /\/\.\.$/ ) {
+            print("ERROR: path can not has parent dir opertor:\"..\".\n");
+            $optionError = 1;
+        }
+    }
+
+    usage() if ( $optionError eq 1 );
+
+    my %opts = (
+        port        => $port,
+        user        => $user,
+        timeout     => 1,
+        master_opts => [ -o => "StrictHostKeyChecking=no" ]
+    );
+
+    if ( defined($pass) and $pass ne '' ) {
+        $opts{password} = $pass;
+    }
+
+    my $ssh = Net::OpenSSH->new( $host, %opts );
+
+    my %scpOpts = (
+        recursive  => 1,
+        verbose    => $isVerbose,
+        glob       => 1,
+        copy_attrs => $isPreserve
+    );
+
+    if ( $isPull eq 0 ) {
+        $ssh->scp_put( \%scpOpts, @dirs );
+    }
+    else {
+        $ssh->scp_get( \%scpOpts, @dirs );
+    }
+}
+
+main();
+

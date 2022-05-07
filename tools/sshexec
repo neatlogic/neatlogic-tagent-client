@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib/perl-lib/lib/perl5";
+use lib "$FindBin::Bin/../lib/perl-lib/share/perl5";
+
+use strict;
+use Getopt::Long;
+use File::Basename;
+use Net::OpenSSH;
+
+sub usage {
+    my $pname = basename($0);
+
+    print("Usage: $pname [-h|--host <hostname>] [-p|--port <hostname>] [-u|--user <username>] [-P|--pass <password>] [--supass <su password>] [-v|--verbose] cmd\n");
+    print("       host:        remote host name or ip\n");
+    print("       username:    ssh logon username\n");
+    print("       password:    ssh logon password\n");
+    print("       su password: su execute user password\n");
+    print("       cmd:         command text\n");
+
+    exit(1);
+}
+
+sub main() {
+    my ( $ishelp, $host, $port, $user, $pass, $supass, $isVerbose, $cmd, $eofStr, $scriptFile );
+
+    $cmd       = '';
+    $port      = 22;
+    $isVerbose = 0;
+
+    sub addCmd {
+        my $item = shift(@_);
+        $cmd = "$cmd $item";
+    }
+
+    GetOptions(
+        'help'      => \$ishelp,
+        'v|verbose' => \$isVerbose,
+        'h|host:s'  => \$host,
+        'p|port:i'  => \$port,
+        'u|user:s'  => \$user,
+        'P|pass:s'  => \$pass,
+        'supass:s'  => \$supass,
+        'eofstr:s'  => \$eofStr,
+        '<>'        => \&addCmd
+    );
+
+    usage() if ( not defined($host) or not defined($port) or not defined($user) or ( $cmd eq '' ) );
+
+    my %opts = (
+        port        => $port,
+        user        => $user,
+        timeout     => 1,
+        master_opts => [ -o => "StrictHostKeyChecking=no" ]
+    );
+
+    if ( defined($pass) and $pass ne '' ) {
+        $opts{password} = $pass;
+    }
+
+    my $ssh = Net::OpenSSH->new( $host, %opts );
+
+    $ssh->system($cmd)
+        or die "remote command failed: " . $ssh->error;
+}
+
+main();
+

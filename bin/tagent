@@ -1,0 +1,299 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib/perl-lib/lib/perl5";
+
+use strict;
+use POSIX qw(:sys_wait_h WNOHANG setsid uname);
+use Cwd qw( abs_path getcwd );
+use Fcntl qw(:flock);
+use File::Spec;
+use Tagent;
+use EnvExec;
+
+my $TAGENT_ACTION;
+my $CMDLINE;
+my $STARTPATH   = getcwd();
+my $TOBE_RELOAD = 0;
+my $homePath    = abs_path("$FindBin::Bin/..");
+my $progName    = $FindBin::Script;
+my @uname       = uname();
+my $ostype      = $uname[0];
+
+sub start {
+    my ( $tagent, $pidFile ) = @_;
+
+    my $signal = 0;
+
+    do {
+        $signal = 0;
+
+        my $pid = 0;
+        $pid = fork();
+        if ( not defined($pid) ) {
+            $tagent->log("ERROR: resource busy, fork failed.\n");
+            print("ERROR: resource busy, fork failed.\n");
+            sleep(2);
+            next;
+        }
+        elsif ( $pid == 0 ) {
+            print("INFO: Agent starting...\n");
+            my $workPidFh;
+            if ( open( $workPidFh, ">>$pidFile.subproc" ) ) {
+                print $workPidFh (" $$");
+                close($workPidFh);
+            }
+
+            $tagent->start();
+        }
+        elsif ( $pid != 0 ) {
+            my $pidFh;
+            if ( open( $pidFh, ">$pidFile" ) ) {
+                print $pidFh ($$);
+                close($pidFh);
+            }
+
+            my $manPid = 0;
+            $manPid = fork();
+            if ( $manPid == 0 ) {
+                $tagent->startManager();
+                exit(0);
+            }
+
+            if ( $ostype !~ /Windows/i ) {
+                $SIG{'TERM'} = $SIG{'INT'} = sub {
+                    kill( 'TERM', $pid, $manPid );
+                };
+            }
+
+            my $exitPid = wait();
+            $signal = $? & 0x7f;
+
+            my $pidWaited;
+
+            $pidWaited = waitpid( $manPid, &WNOHANG );
+            if ( defined($pidWaited) and $pidWaited ne -1 ) {
+                kill( 'TERM', $manPid );
+                waitpid( $manPid, 0 );
+            }
+
+            $pidWaited = waitpid( $pid, &WNOHANG );
+            if ( defined($pidWaited) and $pidWaited ne -1 ) {
+                kill( 'TERM', $pid );
+                waitpid( $pid, 0 );
+            }
+
+            if ( $TOBE_RELOAD == 1 ) {
+                chdir($STARTPATH);
+                $tagent->log("INFO: reload tagent: $CMDLINE\n");
+                $ENV{TAGENT_RELOAD} = 1;
+                exec($CMDLINE);
+            }
+        }
+    } while ( $signal == 6 or $signal == 11 );
+}
+
+sub stop {
+    my ($pidFile) = @_;
+    my $pidFh;
+    if ( open( $pidFh, "<$pidFile" ) ) {
+        my $allPid = <$pidFh>;
+        my @pids = split( /\s+/, $allPid );
+        my $mainPid;
+        my $workerPid;
+        if ( scalar(@pids) > 0 ) {
+            $mainPid = $pids[0];
+        }
+
+        if ( scalar(@pids) > 1 ) {
+            $workerPid = $pids[1];
+        }
+
+        my $isStop       = 0;
+        my $workerExists = 0;
+
+        if ( defined($workerPid) ) {
+            $workerExists = 1;
+
+            my $prcCount = kill( 0, $workerPid );
+            if ( $prcCount == 0 ) {
+                $workerExists = 0;
+            }
+            else {
+                kill( 'TERM', $workerPid );
+                for ( my $i = 0 ; $i < 5 ; $i++ ) {
+                    $workerExists = 1;
+                    my $prcCount = kill( 0, $workerPid );
+                    if ( $prcCount == 0 ) {
+                        $isStop = 1;
+                        last;
+                    }
+                    sleep(1);
+                }
+
+                if ( $isStop == 0 ) {
+                    kill( 'KILL', $workerPid );
+                }
+
+            }
+        }
+
+        if ( $workerExists == 0 and defined($mainPid) ) {
+            my $isMainStop = 0;
+            my $prcCount = kill( 0, $mainPid );
+            if ( $prcCount > 0 ) {
+                kill( 'TERM', $mainPid );
+                for ( my $i = 0 ; $i < 5 ; $i++ ) {
+                    my $prcCount = kill( 0, $mainPid );
+                    if ( $prcCount == 0 ) {
+                        $isMainStop = 1;
+                        last;
+                    }
+                    sleep(1);
+                }
+
+                if ( $isMainStop == 0 ) {
+                    kill( 'KILL', $mainPid );
+                }
+            }
+        }
+
+        close($pidFh);
+        unlink($pidFile);
+        unlink("$pidFile.subproc");
+        print("INFO: $progName stopped.\n");
+    }
+    else {
+        print("ERROR: can not find pid file:$pidFile, stop failed.\n");
+        exit(-1);
+    }
+}
+
+sub status {
+    my ($pidFile) = @_;
+
+    my $pidFh;
+    if ( open( $pidFh, "<$pidFile" ) ) {
+        my $pid = <$pidFh>;
+        my $count = kill( 'HUP', $pid );
+
+        if ( $count > 0 ) {
+            print("INFO: $progName status up.\n");
+        }
+        else {
+            print("INFO: $progName status down.\n");
+        }
+    }
+    else {
+        print("INFO: $progName status down.\n");
+    }
+}
+
+sub closeTTY {
+    if ( $TAGENT_ACTION eq 'start' ) {
+        open( STDIN,  '/dev/null' )   or die "Can't read /dev/null: $!";
+        open( STDOUT, '>>/dev/null' ) or die "Can't write to /dev/null: $!";
+        open( STDERR, '>>/dev/null' ) or die "Can't write to /dev/null: $!";
+    }
+}
+
+sub daemonize {
+    my $pid;
+    defined( $pid = fork() ) or die "Can't fork: $!";
+    exit if ( $pid != 0 or not defined($pid) );
+
+    closeTTY();
+    setsid() or die "Can't start a new session: $!";
+
+    #umask(0);
+}
+
+sub main {
+    $SIG{HUP} = sub { };
+
+    $CMDLINE = join( ' ', $0, @ARGV );
+
+    chdir($homePath) or die "Can't chdir to /: $!";
+    $TAGENT_ACTION = $ARGV[0] || undef;
+    my $confBaseArg = $ARGV[1] || undef;
+    my $confBase    = $ARGV[1] || getcwd();
+
+    my $tmpDir = File::Spec->tmpdir;
+    $ENV{TMPDIR} = $tmpDir;
+
+    my $envFilePath = "$confBase/conf/$progName.env";
+    EnvExec::execEnvFile($envFilePath);
+
+    $ENV{TERM}            = 'dumb';
+    $ENV{TAGENT_BASE}     = $homePath;
+    $ENV{TAGENT_MOD_BASE} = "$homePath/mod";
+
+    if ( not defined($tmpDir) or $tmpDir eq '' or not -d $tmpDir ) {
+        print("ERROR: system tmp dir not defined.\n");
+        exit(-1);
+    }
+
+    $ENV{TAGENT_HOME} = $confBase;
+    my $tagent = Tagent->new($confBase);
+
+    my $pidFile = "$confBase/logs/$progName.pid";
+    my $pidFh;
+
+    $SIG{USR1} = sub {
+        $TOBE_RELOAD = 1;
+    };
+
+    my @uname = uname();
+    if ( $uname[0] !~ /Windows/i ) {
+        if ( $TAGENT_ACTION eq 'start' ) {
+            open( $pidFh, "+>>$pidFile" );
+            my $locked = flock( $pidFh, LOCK_EX | LOCK_NB );
+            if ( $locked ne 1 ) {
+                print("ERROR: $progName has been started, start failed.\n");
+                exit(-1);
+            }
+
+            daemonize();
+            $pidFh->truncate(0);
+            print $pidFh ($$);
+            $pidFh->flush();
+        }
+        elsif ( $TAGENT_ACTION eq 'server' ) {
+            setsid() or die "Can't start a new session: $!";
+        }
+        elsif ( $TAGENT_ACTION eq 'stop' ) {
+            stop($pidFile);
+        }
+        elsif ( $TAGENT_ACTION eq 'status' ) {
+            status($pidFile);
+        }
+
+        chdir('/');
+    }
+    else {
+        if ( $tmpDir =~ /^[a-zA-Z]:/ ) {
+            chdir( substr( $tmpDir, 0, 2 ) . '\\' );
+        }
+        elsif ( $homePath =~ /^[a-zA-Z]:/ ) {
+            chdir( substr( $homePath, 0, 2 ) . '\\' );
+        }
+    }
+
+    if ( $TAGENT_ACTION eq 'start' or $TAGENT_ACTION eq 'test' or $TAGENT_ACTION eq 'server' ) {
+        my $workPidFh;
+        if ( open( $workPidFh, ">$pidFile.subproc" ) ) {
+            print $workPidFh ($$);
+            close($workPidFh);
+        }
+
+        $tagent->register();
+        start( $tagent, $pidFile );
+    }
+    elsif ( $TAGENT_ACTION ne 'stop' and $TAGENT_ACTION ne 'status' ) {
+        print("Usage: $progName <start|stop|status|server|test> <agent base directory>\n");
+        exit(-1);
+    }
+}
+
+main();
+

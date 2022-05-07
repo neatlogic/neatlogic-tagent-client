@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+sub main {
+    my $ip      = $ARGV[0] || '127.0.0.1';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+    my $ret = 0;
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+
+    print("INFO: test execute reload.\n");
+    my $ret = $tagent->reload( 'root', 1 );
+    print("Reload return: $ret\n");
+}
+
+main();
+

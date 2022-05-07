@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use strict;
+use Socket;
+use IO::Socket::INET;
+use TagentClient;
+no warnings;
+
+my $AUTH_KEY = 'techsure901';
+
+sub main {
+    my $ip      = $ARGV[0] || '127.0.0.1';
+    my $port    = $ARGV[1] || '3939';
+    my $authKey = $ARGV[2] || 'ts9012501';
+
+    print("DEBUG: server ip:$ip\n");
+    my $tagent = new TagentClient( $ip, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    #$tagent->updateCred($authKey);
+
+    print("INFO: test execute remote commad.\n");
+    $tagent->execCmd( 'app', "dir c:\\", 1 );
+
+    print("INFO: test download.\n");
+    $tagent->download( 'app', "C:/Users/wenhb/tmp/Crypt-Perl-0.17.tar", "/app/tmp/tmp/", 1 );
+
+    print("INFO: test download dir.\n");
+    $tagent->download( 'app', "C:\\Users\\wenhb\\tmp\\ImageSearch", "/app/tmp/tmp/", 1 );
+
+    print("INFO: test upload file.\n");
+    $tagent->upload( 'app', "/tmp/Crypt-Perl-0.17.tar", "C:\\Users\\wenhb\\tmp\\", 'windows', 1 );
+
+    print("INFO: test upload dir.\n");
+    $tagent->upload( 'app', "/tmp/Crypt-Perl-0.17", "C:\\Users\\wenhb\\tmp\\", 'windows', 1 );
+}
+
+main();
+

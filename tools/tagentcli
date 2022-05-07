@@ -1,0 +1,119 @@
+#!/usr/bin/perl
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use lib "$FindBin::Bin/../lib/perl-lib/lib/perl5";
+
+use strict;
+use TagentClient;
+use Cwd;
+use Getopt::Long;
+Getopt::Long::Configure qw(gnu_getopt);
+Getopt::Long::Configure("pass_through");
+
+sub usage {
+    my $pname = $FindBin::Script;
+
+    print("Usage: $pname [-v|--verbose] [-h|--host] <host> -u <user> -p <port> -P <password> [-b|--binary] [-a|--action] [exec|upload|download|writefile|reload] <args ...>\n");
+
+    exit(1);
+}
+
+sub main {
+    my ( $isVerbose, $host, $user, $port, $password, $isBinary, $action, @args ) = @_;
+    my $convertCharset = 1;
+    $user = 'root';
+    $port = 3939;
+
+    GetOptions(
+        'v|verbose'    => \$isVerbose,
+        'b|binary'     => \$isBinary,
+        'p|port=i'     => \$port,
+        'P|password=s' => \$password,
+        'a|action=s'   => \$action,
+        'h|host=s'     => \$host,
+        'u|user=s'     => \$user,
+        '<>'           => sub { my $item = shift(@_); push( @args, $item ); }
+    );
+
+    if ( not defined($host) or not defined($action) ) {
+        usage();
+    }
+
+    if ( defined($isBinary) ) {
+        $convertCharset = 0;
+    }
+
+    if ( not defined($password) or $password eq '' ) {
+        print("Enter tagent password: ");
+        system( 'stty', '-echo' );
+        $password = <>;
+        $password =~ s/^\s*//;
+        $password =~ s/\s*$//;
+        system( 'stty', 'echo' );
+    }
+
+    my $authKey = $password;
+
+    my $tagent = new TagentClient( $host, $port, $authKey );
+
+    if ( not defined($tagent) ) {
+        exit(-1);
+    }
+
+    my $status = 0;
+    if ( $action eq 'exec' ) {
+        my $cmd = join( ' ', @args );
+        $status = $tagent->execCmd( $user, $cmd, $isVerbose );
+    }
+    elsif ( $action eq 'upload' ) {
+        my $argsLen = scalar(@args);
+        if ( $argsLen == 2 ) {
+            $status = $tagent->upload( $user, $args[0], $args[1], $isVerbose, $convertCharset );
+        }
+        elsif ( $argsLen == 3 ) {
+            $status = $tagent->upload( $user, $args[0], $args[1], $isVerbose, $convertCharset, $args[2] );
+        }
+        else {
+            print("ERROR: exec must has only two or three argument.\n");
+            print("Example: upload /tmp/test /home/app/\n");
+            print("Example(follow links): upload /tmp/test /home/app/ 1\n");
+            exit(-1);
+        }
+    }
+    elsif ( $action eq 'download' ) {
+        my $argsLen = scalar(@args);
+
+        if ( $argsLen == 2 ) {
+            $status = $tagent->download( $user, $args[0], $args[1], $isVerbose );
+        }
+        elsif ( $argsLen == 3 ) {
+            $status = $tagent->download( $user, $args[0], $args[1], $isVerbose, $args[2] );
+        }
+        else {
+            print("ERROR: exec must has only two argument.\n");
+            exit(-1);
+        }
+    }
+    elsif ( $action eq 'writefile' ) {
+        if ( scalar(@args) != 2 ) {
+            print("ERROR: exec must has only two argument.\n");
+            print("Example: /home/app/test 'the file content'\n");
+            exit(-1);
+        }
+        $status = $tagent->writeFile( $user, $args[1], $args[0], $isVerbose, $convertCharset );
+    }
+    elsif ( $action eq 'reload' ) {
+        $status = $tagent->reload();
+    }
+    else {
+        usage();
+    }
+
+    if ( $status ne 0 ) {
+        print("ERROR: execute tagent failed, exit code:$status.\n");
+        exit($status);
+    }
+}
+
+main();
+
