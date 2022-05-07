@@ -357,8 +357,12 @@ sub register {
                                 my $proxyGroup = join( ',', @group );
                                 $config->{'tagent.id'}      = $tagentId;
                                 $config->{'credential'}     = '{ENCRYPTED}' . $authKeyEncrypted;
-                                $config->{'proxy.group'}    = join( ',', @group );
-                                $config->{'proxy.group.id'} = $proxyGroupId;
+                                if ( scalar(@group) > 0 ){
+                                    $config->{'proxy.group'}    = join( ',', @group );
+                                }
+                                if ( defined($proxyGroupId) and $proxyGroupId ne '' ){
+                                    $config->{'proxy.group.id'} = $proxyGroupId;
+                                }
                                 if ( not $self->{config}->write( $self->{confFile} ) ) {
                                     &$logger("ERROR: Update config file failed after registered:$!\n");
                                     die("Update config file failed after registered:$!\n");
@@ -1483,7 +1487,7 @@ sub mainLoop {
                             if ( defined( $resp->{type} ) and $resp->{type} eq 'updategroup' ) {
                                 my $configProxys = $config->{'proxy.group'};
                                 my $respProxys   = $resp->{'groupinfo'};
-                                if ( $configProxys ne $respProxys ) {
+                                if ( $configProxys ne $respProxys and $respProxys ne '' ) {
 
                                     #my @confProxyList = sort(split( /\s*,\s*/, $group ));
                                     #my @respProxyList = sort(split( /\s*,\s*/, $respProxys);
