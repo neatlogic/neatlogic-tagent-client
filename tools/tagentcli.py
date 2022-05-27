@@ -14,7 +14,7 @@ def usage():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose',  '-v', action='store_true', default=False, help='Verbose output')
-    parser.add_argument('--binary',   '-b', action='store_true', default=False, help='Echange datq as binary')
+    parser.add_argument('--binary',   '-b', action='store_true', default=False, help='Data is binary')
     parser.add_argument('--host',      default='127.0.0.1',  help='Host')
     parser.add_argument('--port',     '-p', default='3939',  help='Port')
     parser.add_argument('--password', '-P', default='',  help='Password')
@@ -33,9 +33,9 @@ if __name__ == "__main__":
     if not host or not port or action not in ('exec', 'upload', 'download', 'writefile', 'reload'):
         usage()
 
-    convertCharset = True
+    convertCharset = 1
     if args.binary:
-        convertCharset = False
+        convertCharset = 0
 
     if not password:
         password = getpass.getpass("Enter tagent password:")
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     elif action == 'download':
         argsLen = len(restArgs)
         if argsLen == 2:
-            status = tagent.download(user, restArgs[0], restArgs[1], isVerbose)
+            status = tagent.download(user, restArgs[0], restArgs[1], isVerbose, 0, convertCharset=convertCharset)
         elif argsLen == 3:
-            status = tagent.download(user, restArgs[0], restArgs[1], isVerbose, restArgs[2])
+            status = tagent.download(user, restArgs[0], restArgs[1], isVerbose, restArgs[2], convertCharset=convertCharset)
         else:
             print("ERROR: download must has only two or three argument.\n")
             print("Example: download /tmp/test /home/app/\n")
