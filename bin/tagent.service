@@ -6,7 +6,7 @@ After=network.target
 [Service]
 LimitNOFILE=131072
 User=SUDO
-Type=simple
+Type=Forking
 Restart=always
 RestartSec=10
 EnvironmentFile=

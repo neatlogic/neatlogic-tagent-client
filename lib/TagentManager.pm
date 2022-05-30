@@ -170,7 +170,7 @@ sub new {
 }
 
 sub getVersion {
-    return '1.4.8';
+    return '1.5.0';
 }
 
 sub _getWinScriptExt {
@@ -326,13 +326,13 @@ sub register {
                 #&$logger( "DEBUG: post data is :".from_json($postData). "end\n" );
                 my @proxyAddresses = split( /\s*,\s*/, $registerAddress );
                 if ( scalar(@proxyAddresses) > 1 ) {
-                    my $startIdx = $ipHashVal % scalar(@proxyAddresses);
+                    my $startIdx       = $ipHashVal % scalar(@proxyAddresses);
                     my @headProxyAddrs = splice( @proxyAddresses, 0, $startIdx );
                     push( @proxyAddresses, @headProxyAddrs );
                 }
 
                 foreach my $proxyAddress (@proxyAddresses) {
-                    my $http = HTTP::Tiny->new( timeout => 15 );
+                    my $http     = HTTP::Tiny->new( timeout => 15 );
                     my $response = $http->post(
                         $proxyAddress => {
                             content => to_json($postData),
@@ -355,12 +355,12 @@ sub register {
                                     push( @group, $address );
                                 }
                                 my $proxyGroup = join( ',', @group );
-                                $config->{'tagent.id'}      = $tagentId;
-                                $config->{'credential'}     = '{ENCRYPTED}' . $authKeyEncrypted;
-                                if ( scalar(@group) > 0 ){
-                                    $config->{'proxy.group'}    = join( ',', @group );
+                                $config->{'tagent.id'}  = $tagentId;
+                                $config->{'credential'} = '{ENCRYPTED}' . $authKeyEncrypted;
+                                if ( scalar(@group) > 0 ) {
+                                    $config->{'proxy.group'} = join( ',', @group );
                                 }
-                                if ( defined($proxyGroupId) and $proxyGroupId ne '' ){
+                                if ( defined($proxyGroupId) and $proxyGroupId ne '' ) {
                                     $config->{'proxy.group.id'} = $proxyGroupId;
                                 }
                                 if ( not $self->{config}->write( $self->{confFile} ) ) {
@@ -424,7 +424,7 @@ sub getConnection {
             eval(q{$socketType = Socket::SOCK_STREAM | Socket::SOCK_CLOEXEC;});
         }
 
-        my @proxyList = split( /,/, $group );
+        my @proxyList  = split( /,/, $group );
         my $proxyCount = scalar(@proxyList);
 
         #根据tagentId的值进行proxy的优先选择
@@ -637,7 +637,7 @@ sub _updateAppsConf {
             }
         }
 
-        my %validKeys = map { $_ => 1 } @keysTmp, keys(%$myOsConf);
+        my %validKeys  = map { $_ => 1 } @keysTmp, keys(%$myOsConf);
         my @scriptKeys = keys(%validKeys);
 
         foreach my $scriptKey (@scriptKeys) {
@@ -827,7 +827,7 @@ sub getWinProcCpuAndMem {
     my $bCpuTime = $proc->{UserModeTime} + $proc->{KernelModeTime};
 
     my $cpuPercent = sprintf( '%.2f', ( $bCpuTime - $aCpuTime ) / $ENV{"NUMBER_OF_PROCESSORS"} / 10000000 * 100 );
-    my $memSize = sprintf( '%.2f', $proc->{WorkingSetSize} / 1024 / 1024 );
+    my $memSize    = sprintf( '%.2f', $proc->{WorkingSetSize} / 1024 / 1024 );
 
     return ( sprintf( '%.2f', $cpuPercent ), sprintf( '%.2f', $memSize ) );
 }
@@ -871,7 +871,7 @@ sub getPosixProcCpuAndMem {
                 $line =~ s/^\s+//;
                 my ( $p, $m ) = split( /\s+/, $line );
                 $pcpu = $pcpu + sprintf( '%.2f', $p );
-                $mem = $mem + sprintf( '%.2f', $m );
+                $mem  = $mem + sprintf( '%.2f', $m );
             }
             close($procInfo);
         }

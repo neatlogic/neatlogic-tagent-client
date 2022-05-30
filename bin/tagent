@@ -98,7 +98,7 @@ sub stop {
     my $pidFh;
     if ( open( $pidFh, "<$pidFile" ) ) {
         my $allPid = <$pidFh>;
-        my @pids = split( /\s+/, $allPid );
+        my @pids   = split( /\s+/, $allPid );
         my $mainPid;
         my $workerPid;
         if ( scalar(@pids) > 0 ) {
@@ -140,7 +140,7 @@ sub stop {
 
         if ( $workerExists == 0 and defined($mainPid) ) {
             my $isMainStop = 0;
-            my $prcCount = kill( 0, $mainPid );
+            my $prcCount   = kill( 0, $mainPid );
             if ( $prcCount > 0 ) {
                 kill( 'TERM', $mainPid );
                 for ( my $i = 0 ; $i < 5 ; $i++ ) {
@@ -174,7 +174,7 @@ sub status {
 
     my $pidFh;
     if ( open( $pidFh, "<$pidFile" ) ) {
-        my $pid = <$pidFh>;
+        my $pid   = <$pidFh>;
         my $count = kill( 'HUP', $pid );
 
         if ( $count > 0 ) {
@@ -245,7 +245,7 @@ sub main {
 
     my @uname = uname();
     if ( $uname[0] !~ /Windows/i ) {
-        if ( $TAGENT_ACTION eq 'start' ) {
+        if ( $TAGENT_ACTION eq 'start' or $TAGENT_ACTION eq 'server' ) {
             open( $pidFh, "+>>$pidFile" );
             my $locked = flock( $pidFh, LOCK_EX | LOCK_NB );
             if ( $locked ne 1 ) {
@@ -257,9 +257,10 @@ sub main {
             $pidFh->truncate(0);
             print $pidFh ($$);
             $pidFh->flush();
-        }
-        elsif ( $TAGENT_ACTION eq 'server' ) {
-            setsid() or die "Can't start a new session: $!";
+
+            if ( $TAGENT_ACTION eq 'server' ) {
+                setsid() or die "Can't start a new session: $!";
+            }
         }
         elsif ( $TAGENT_ACTION eq 'stop' ) {
             stop($pidFile);
@@ -289,11 +290,22 @@ sub main {
         $tagent->register();
         start( $tagent, $pidFile );
     }
+    elsif ( $TAGENT_ACTION eq 'reload' ) {
+        my $status = $tagent->sendReloadReq();
+        if ( $status == 0 ) {
+            print("INFO: Reload success.\n");
+        }
+        else {
+            print("ERROR: Reload failed.\n");
+        }
+
+        return $status;
+    }
     elsif ( $TAGENT_ACTION ne 'stop' and $TAGENT_ACTION ne 'status' ) {
         print("Usage: $progName <start|stop|status|server|test> <agent base directory>\n");
-        exit(-1);
+        return 3;
     }
 }
 
-main();
+exit main();
 

@@ -3,6 +3,7 @@
     "python.envFile": "/Users/wenhb/git/tagent/.vscode/.env",
     "perl.perlInc": [
         ".",
-        "/Users/wenhb/git/tagent/lib"
+        "/Users/wenhb/git/tagent/lib",
+        "/Users/wenhb/git/tagent/lib/perl-lib/lib/perl5"
     ]
 }

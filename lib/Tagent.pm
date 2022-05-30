@@ -31,6 +31,7 @@ use Fcntl qw(:flock);
 
 use Config;
 use EnvExec;
+use TagentClient;
 use TagentManager;
 
 #use threads;
@@ -719,7 +720,7 @@ sub _purgeLog {
     my $maxLogFileSize = int( $self->{config}->{_}->{'logfile.size'} );
     my $maxLogCount    = int( $self->{config}->{_}->{'logfile.count'} );
     $maxLogFileSize = 4 * 1024 * 1024 if ( $maxLogFileSize == 0 );
-    $maxLogCount = 4 if ( $maxLogCount == 0 );
+    $maxLogCount    = 4               if ( $maxLogCount == 0 );
 
     my $logFile       = $self->{logFile};
     my $confBase      = $self->{confBase};
@@ -753,7 +754,7 @@ sub log {
     my $logLockFileHandle = $self->{logLockFileHandle};
 
     my $currentTime = POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime() );
-    my $newmsg = "[$currentTime]$msg";
+    my $newmsg      = "[$currentTime]$msg";
 
     flock( $logLockFileHandle, LOCK_SH );
     print $logFileHandle ($newmsg);
@@ -850,6 +851,19 @@ sub updateCred {
     }
 
     return $statusCode;
+}
+
+sub sendReloadReq {
+    my ($self) = @_;
+    my $config = $self->{config}->{_};
+
+    my $ip      = '127.0.0.1';
+    my $port    = $config->{'listen.port'};
+    my $authKey = $self->{authKey};
+
+    my $tagentClient = TagentClient->new( $ip, $port, $authKey, 10, 10 );
+
+    return $tagentClient->reload();
 }
 
 sub reload {
@@ -973,7 +987,7 @@ sub _readTarCmdOutToSock {
         $self->_writeChunk( $clientSock, "Status:$statusCode,FileType:$fileType" );
 
         my $clientSelect = new IO::Select($clientSock);
-        my $pipeSelect = new IO::Select( $pipe, $err );
+        my $pipeSelect   = new IO::Select( $pipe, $err );
 
         my $timeConsume  = 0;
         my $hasException = 0;
@@ -1047,7 +1061,7 @@ sub _readTarCmdOutToSock {
 
                     if ( $errLen > 0 ) {
                         $errMsgLen = $errMsgLen + $errLen;
-                        $errMsg = $errMsg . substr( $errBuf, 0, $errLen );
+                        $errMsg    = $errMsg . substr( $errBuf, 0, $errLen );
                         if ( $errMsgLen > $errMsgMaxLen ) {
                             $errMsg = substr( $errMsg, index( $errMsg, "\n", $errMsgLen - $errMsgMaxLen ) + 1 );
                         }
@@ -1074,7 +1088,7 @@ sub _readTarCmdOutToSock {
 
                 if ( $errLen > 0 ) {
                     $errMsgLen = $errMsgLen + $errLen;
-                    $errMsg = $errMsg . substr( $errBuf, 0, $errLen );
+                    $errMsg    = $errMsg . substr( $errBuf, 0, $errLen );
                     if ( $errMsgLen > $errMsgMaxLen ) {
                         $errMsg = substr( $errMsg, index( $errMsg, "\n", $errMsgLen - $errMsgMaxLen ) + 1 );
                     }
@@ -1101,7 +1115,7 @@ sub _readTarCmdOutToSock {
             $timeConsume = time() - $startTime;
         }
 
-        my $exitPid = waitpid( $pid, 0 );
+        my $exitPid    = waitpid( $pid, 0 );
         my $exitStatus = $?;
         close($pipe);
 
@@ -1293,7 +1307,7 @@ sub _readCmdOutLinesToSock {
                     }
                     elsif ( $line eq "\x1b[[-=-exec finish-=-\x1b]]\r\n" ) {
                         $exitByFlagLine = 1;
-                        $exitStatus = int( _readline( $pipe, 32768 ) );
+                        $exitStatus     = int( _readline( $pipe, 32768 ) );
                         last;
                     }
                 }
@@ -1327,7 +1341,7 @@ sub _readCmdOutLinesToSock {
                         }
                         elsif ( $line eq "\x1b[[-=-exec finish-=-\x1b]]\r\n" ) {
                             $exitByFlagLine = 1;
-                            $exitStatus = int( _readline( $pipe, 32768 ) );
+                            $exitStatus     = int( _readline( $pipe, 32768 ) );
                             last;
                         }
                     }
@@ -1460,7 +1474,7 @@ sub _execCmdAsync {
             }
             elsif ( $line eq "\x1b[[-=-exec finish-=-\x1b]]\r\n" ) {
                 $exitByFlagLine = 1;
-                $exitCode = int( _readline( $pipe, 32768 ) );
+                $exitCode       = int( _readline( $pipe, 32768 ) );
                 last;
             }
         }
@@ -1548,7 +1562,7 @@ sub download {
                 $fileType = 'dir';
 
                 if ( $self->{ostype} eq 'windows' ) {
-                    $fileType = 'windir';
+                    $fileType   = 'windir';
                     $statusCode = $self->_readTarCmdOutToSock( $clientSock, "7z.exe a dummy -ttar -y -so .", $fileType );
                 }
                 else {
@@ -1556,7 +1570,7 @@ sub download {
                 }
             }
             elsif ( -e $filePath ) {
-                $fileType = 'file';
+                $fileType   = 'file';
                 $statusCode = $self->_readFileToSock( $clientSock, $filePath, $fileType );
             }
             else {
@@ -1588,7 +1602,7 @@ sub upload {
     my $statusCode = 200;
 
     if ( defined($fileType) and defined($srcPath) and defined($filePath) ) {
-        $srcPath =~ s/[\/\\]+/\//g;
+        $srcPath  =~ s/[\/\\]+/\//g;
         $filePath =~ s/[\/\\]+/\//g;
 
         $filePath =~ s/\$(\w+)/$ENV{$1}/g;
@@ -1836,7 +1850,7 @@ sub _setUid {
             my $userShell = $userInfo[8];
 
             my @userGids = $self->_getUserGroups($user);
-            my $gids = join( ' ', @userGids );
+            my $gids     = join( ' ', @userGids );
             if ( scalar(@userGids) >= 1 ) {
                 $gids = $userGids[0] . ' ' . $gids;
             }
@@ -1924,7 +1938,7 @@ sub handleRequest {
         return $statusCode;
     }
 
-    my @request = split( '\|', $reqCmd );
+    my @request    = split( '\|', $reqCmd );
     my $paramCount = scalar(@request);
 
     if ( $paramCount < 4 ) {
@@ -2182,7 +2196,7 @@ sub start {
                 my $isReload = 0;
 
                 foreach my $childPid ( keys(%childPids) ) {
-                    my $exitPid = waitpid( $childPid, WNOHANG );
+                    my $exitPid    = waitpid( $childPid, WNOHANG );
                     my $exitStatus = $?;
 
                     if ( $exitPid != 0 ) {

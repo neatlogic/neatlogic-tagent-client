@@ -14,7 +14,6 @@
 # status:  monitor the service
 ### END INIT INFO
 
-
 # Source function library.
 #. /etc/rc.d/init.d/functions
 
@@ -27,33 +26,38 @@ TAGENT_HOME=$TAGENT_BASE/run/$RUN_USER
 export TAGENT_BASE
 export TAGENT_HOME
 
-start(){
+start() {
     ulimit -n 131072
-    if [ "$RUN_USER" = "root" ]
-    then 
+    if [ "$RUN_USER" = "root" ]; then
         $TAGENT_BASE/bin/tagent start $TAGENT_HOME
     else
         sudo -u $RUN_USER $TAGENT_BASE/bin/tagent start $TAGENT_HOME
     fi
 }
 
-stop(){
-    if [ "$RUN_USER" = "root" ]
-    then
+stop() {
+    if [ "$RUN_USER" = "root" ]; then
         $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
     else
         sudo -u $RUN_USER $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
     fi
 }
 
-restart(){
+reload() {
+    if [ "$RUN_USER" = "root" ]; then
+        $TAGENT_BASE/bin/tagent reload $TAGENT_HOME
+    else
+        sudo -u $RUN_USER $TAGENT_BASE/bin/tagent reload $TAGENT_HOME
+    fi
+}
+
+restart() {
     stop
     start
 }
 
-status(){
-    if [ "$RUN_USER" = "root" ]
-    then
+status() {
+    if [ "$RUN_USER" = "root" ]; then
         $TAGENT_BASE/bin/tagent status $TAGENT_HOME
     else
         sudo -u $RUN_USER $TAGENT_BASE/bin/tagent status $TAGENT_HOME
@@ -62,22 +66,25 @@ status(){
 
 # See how we were called.
 case "$1" in
-  start)
+start)
     start
     ;;
-  stop)
+stop)
     stop
     ;;
-  status)
+reload)
+    reload
+    ;;
+status)
     status
     ;;
-  restart)
+restart)
     restart
     ;;
-  *)
-    echo $"Usage: $0 {start|stop|status|restart}"
+*)
+    echo $"Usage: $0 {start|stop|status|reload|restart}"
     exit 2
+    ;;
 esac
 
 exit $?
-
