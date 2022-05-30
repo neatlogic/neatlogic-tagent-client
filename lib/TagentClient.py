@@ -473,20 +473,24 @@ class TagentClient:
                         else:
                             break
                 else:
+                    # TODO：因为服务端是按照字节传送数据的，所以需要客户端进行转码，
+                    # 后续要寻求更高效的转码方式取代按行转码
                     lineLeft = b''
                     while True:
                         chunk = self.__readChunk(sock)
                         if chunk:
                             chunk = lineLeft + chunk
-                            if chunk[-1] != b'\n':
-                                try:
-                                    lineEnd = chunk.rindex(b'\n')
-                                    lineLeft = chunk[lineEnd:]
-                                    chunk = chunk[0:lineEnd]
-                                except:
-                                    lineLeft = chunk
-                            chunk = chunk.decode(agentCharset).encode(charset, 'replace')
-                            f.write(chunk)
+                            try:
+                                lineEnd = chunk.rindex(b'\n') + 1
+                                lineLeft = chunk[lineEnd:]
+                                chunk = chunk[0:lineEnd]
+                            except:
+                                lineLeft = chunk
+                                chunk = ''
+
+                            if chunk != '':
+                                chunk = chunk.decode(agentCharset).encode(charset, 'replace')
+                                f.write(chunk)
                         else:
                             if lineLeft != '':
                                 lineLeft = lineLeft.decode(agentCharset).encode(charset, 'replace')
@@ -626,33 +630,21 @@ class TagentClient:
         charset = self.charset
         status = 0
         try:
-            with open(filePath, "rb") as f:
-                if convertCharset == 0:
+            if convertCharset == 0:
+                with open(filePath, 'rb') as f:
                     while True:
                         buf = f.read(buf_size)
                         if not buf:
                             break
                         self.__writeChunk(sock, buf)
-                else:
-                    lineLeft = b''
+            else:
+                with open(filePath, 'rt', encoding=charset) as f:
                     while True:
                         buf = f.read(buf_size)
-                        if buf:
-                            buf = lineLeft + buf
-                            if buf[-1] != b'\b':
-                                try:
-                                    lineEnd = buf.rindex(b'\n')
-                                    lineLeft = buf[lineEnd:]
-                                    buf = buf[0:lineEnd]
-                                except:
-                                    lineLeft = buf
-                            buf = buf.decode(charset).encode(agentCharset, 'replace')
-                            self.__writeChunk(sock, buf)
-                        else:
-                            if lineLeft != '':
-                                lineLeft = lineLeft.decode(charset).encode(agentCharset, 'replace')
-                                self.__writeChunk(sock, lineLeft)
+                        if not buf:
                             break
+                        buf = buf.encode(agentCharset, 'replace')
+                        self.__writeChunk(sock, buf)
             if status == 0:
                 self.__writeChunk(sock)
             self.__readChunk(sock)
@@ -684,20 +676,23 @@ class TagentClient:
                         break
                     self.__writeChunk(sock, buf)
             else:
+                # TODO：因为服务端是按照字节传送数据的，所以需要客户端进行转码，
+                # 后续要寻求更高效的转码方式取代按行转码
                 lineLeft = b''
                 while True:
                     buf = file.read(buf_size)
                     if buf:
                         buf = lineLeft + buf
-                        if buf[-1] != b'\b':
-                            try:
-                                lineEnd = buf.rindex(b'\n')
-                                lineLeft = buf[lineEnd:]
-                                buf = buf[0:lineEnd]
-                            except:
-                                lineLeft = buf
+                        try:
+                            lineEnd = buf.rindex(b'\n') + 1
+                            lineLeft = buf[lineEnd:]
+                            buf = buf[0:lineEnd]
+                        except:
+                            lineLeft = buf
+                            buf = ''
+                        if buf != '':
                             buf = buf.decode(charset).encode(agentCharset, 'replace')
-                        self.__writeChunk(sock, buf)
+                            self.__writeChunk(sock, buf)
                     else:
                         if lineLeft != '':
                             lineLeft = lineLeft.decode(charset).encode(agentCharset, 'replace')

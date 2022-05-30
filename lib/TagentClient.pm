@@ -328,7 +328,7 @@ sub _readChunk {
     my $chunkLen = unpack( 'n', $chunkHead );
 
     if ( $chunkLen > 0 ) {
-        $chunk = '';
+        $chunk   = '';
         $readLen = 0;
         do {
             @ready = ();
@@ -376,7 +376,7 @@ sub _readChunk {
     }
     else {
         $readLen = 0;
-        $chunk = '';
+        $chunk   = '';
         do {
             @ready = ();
 
@@ -425,8 +425,8 @@ sub _readChunk {
             }
             die($chunk);
         }
-        else{
-            undef($chunk)
+        else {
+            undef($chunk);
         }
     }
 
@@ -876,7 +876,7 @@ sub _writeSockToFile {
 #下载文件或者目录
 sub download {
     my ( $self, $user, $src, $dest, $isVerbose, $followLinks ) = @_;
-    $src =~ s/[\/\\]+/\//g;
+    $src  =~ s/[\/\\]+/\//g;
     $dest =~ s/[\/\\]+/\//g;
 
     $src =~ s/^\s+//;
@@ -1217,7 +1217,11 @@ sub _readUrlToSock {
     if ( not defined($isVerbose) ) {
         $isVerbose = 0;
     }
+    if ( not defined($convertCharset) ) {
+        $convertCharset = 0;
+    }
 
+    my $lineLeft     = '';
     my $agentCharset = $self->{agentCharset};
     my $httpCharset;
 
@@ -1228,26 +1232,52 @@ sub _readUrlToSock {
     $args->{data_callback} = sub {
         my ( $data, $res ) = @_;
         if ( $res->{status} == 200 ) {
-            if ( defined($convertCharset) and $convertCharset == 1 ) {
+            if ( $convertCharset == 1 ) {
                 if ( not defined($httpCharset) ) {
                     my $contentType = $res->{headers}->{'content-type'};
                     if ( defined($contentType) and $contentType =~ /charset=(.*?)$/ ) {
                         $httpCharset = $1;
                     }
+                    else {
+                        $httpCharset = '';
+                    }
                 }
-                if ( defined($httpCharset) and $httpCharset ne '' and $httpCharset ne $agentCharset and defined($convertCharset) and $convertCharset == 1 ) {
+                if ( $httpCharset ne '' and $httpCharset ne $agentCharset ) {
+                    $data = $lineLeft . $data;
+                    my $lineEnd = rindex( $data, "\n" );
+                    if ( $lineEnd >= 0 ) {
+                        $lineEnd  = $lineEnd + 1;
+                        $lineLeft = substr( $data, $lineEnd );
+                        $data     = substr( $data, 0, $lineEnd );
+                    }
+                    else {
+                        $lineLeft = $data;
+                        $data     = '';
+                    }
                     $data = Encode::encode( $agentCharset, Encode::decode( $httpCharset, $data ) );
                 }
+                if ( $data ne '' ) {
+                    $self->_writeChunk( $socket, $data );
+                }
             }
-
-            $self->_writeChunk( $socket, $data );
+            else {
+                $self->_writeChunk( $socket, $data );
+            }
         }
         else {
             $status = 3;
         }
     };
 
-    eval { my $response = $http->request( 'GET', $url, $args ); };
+    eval {
+        my $response = $http->request( 'GET', $url, $args );
+        if ( $convertCharset == 1 and $lineLeft ne '' ) {
+            if ( $httpCharset ne '' and $httpCharset ne $agentCharset ) {
+                $lineLeft = Encode::encode( $agentCharset, Encode::decode( $httpCharset, $lineLeft ) );
+            }
+            $self->_writeChunk( $socket, $lineLeft );
+        }
+    };
 
     if ( $status == 0 ) {
         eval { $self->_writeChunk( $socket, undef, 0 ) };
@@ -1389,7 +1419,7 @@ sub writeFile {
 #上传文件或者目录
 sub upload {
     my ( $self, $user, $src, $dest, $isVerbose, $convertCharset, $followLinks ) = @_;
-    $src =~ s/\\/\//g;
+    $src  =~ s/\\/\//g;
     $dest =~ s/\\/\//g;
 
     $src =~ s/^\s+//;

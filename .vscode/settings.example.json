@@ -1,0 +1,8 @@
+{
+    "perltidy.profile": "/Users/wenhb/git/tagent/.vscode/.perltidyrc",
+    "python.envFile": "/Users/wenhb/git/tagent/.vscode/.env",
+    "perl.perlInc": [
+        ".",
+        "/Users/wenhb/git/tagent/lib"
+    ]
+}
