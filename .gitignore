@@ -1,0 +1,8 @@
+*.pyc
+logs/*
+data/*
+test/*
+tmp/*
+.vscode/*
+.DS_Store
+**/.DS_Store
