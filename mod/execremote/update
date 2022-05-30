@@ -1,6 +1,0 @@
-#!/bin/bash
-
-#update the tool scripts from svn
-#-----------
-
-echo "INFO: update exectool succeed."
