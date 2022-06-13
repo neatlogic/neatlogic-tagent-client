@@ -3,41 +3,48 @@
 runUser=root
 action=install
 
-if [ $# -gt 0 ]
-then
-	action=$1
-	runUser=$2
+if [ $# -gt 0 ]; then
+        action=$1
+        runUser=$2
 else
-	echo "Usagen: tagent [install|uninstall] [user name] [port]"
-	exit -1
+        echo "Usagen: tagent install|uninstall [User Run on] [port] [Register Url]"
+        exit -1
 fi
 
 port=3939
-if [ $# -gt 2 ]
-then
-    port=$3
+if [ $# -gt 2 ]; then
+        port=$3
 fi
 
-if [ "$runUser" = "" ]
-then
-	runUser=root
+registerUrl=""
+if [ $# -gt 3 ]; then
+        registerUrl=$4
 fi
 
-if [ "$action" = "help" ]
-then
-	echo "Usagen: setup.sh [install|uninstall] [user name]"
-	echo "	example:setup.sh install root 3939"
-	echo "	example:setup.sh uninstall root"
-	echo "	example:setup.sh install app 4949"
-	echo "	example:setup.sh uninstall app"
-	exit 0;
+if [ "$runUser" = "" ]; then
+        runUser=root
+fi
+
+if [ "$action" = "help" ]; then
+        echo "Usagen: setup.sh [install|uninstall] [user name]"
+        echo "	example:setup.sh install root 3939"
+        echo "	example:setup.sh uninstall root"
+        echo "	example:setup.sh install app 4949"
+        echo "	example:setup.sh uninstall app"
+        exit 0
 fi
 
 echo "INFO:$action tagent on user $runUser."
 
-CWD=`cd $(dirname $0);pwd`
+CWD=$(
+        cd $(dirname $0)
+        pwd
+)
 
-TAGENT_BASE=`cd $(dirname $0)/..;pwd`
+TAGENT_BASE=$(
+        cd $(dirname $0)/..
+        pwd
+)
 TAGENT_HOME=$TAGENT_BASE/run/$runUser
 echo "TAGENT_BASE:$TAGENT_BASE."
 #basePrefix=${TAGENT_BASE//\//\\\/}
@@ -47,34 +54,35 @@ homePrefix=$(echo $TAGENT_HOME | sed -e 's/\//\\\//g')
 
 chmod 755 $CWD/tagent.init.d
 
-generate_user_conf(){
-        if [ ! -e $TAGENT_BASE/run/$runUser ]
-        then
+generate_user_conf() {
+        if [ ! -z "$registerUrl"]; then
+                REG_URL=$registerUrl
+                perl -i -pe "s/proxy\.registeraddress=.*/proxy.registeraddress=$ENV{REG_URL}/" $TAGENT_BASE/conf/tagent.conf
+        fi
+
+        if [ ! -e $TAGENT_BASE/run/$runUser ]; then
                 mkdir $TAGENT_BASE/run/$runUser
                 mkdir $TAGENT_BASE/run/$runUser/logs
                 mkdir $TAGENT_BASE/run/$runUser/tmp
                 cp -rf $TAGENT_BASE/conf $TAGENT_BASE/run/$runUser
-                perl -i -pe s/listen\.port=.*/listen.port=$port/g $TAGENT_BASE/run/$runUser/conf/tagent.conf
+                perl -i -pe "s/listen\.port=.*/listen.port=$port/g" $TAGENT_BASE/run/$runUser/conf/tagent.conf
                 chown -R $runUser $TAGENT_BASE/run/$runUser
         fi
 }
 
-clean_tagent_id(){
-        if [ -e $TAGENT_BASE/run/$runUser ]
-        then
+clean_tagent_id() {
+        if [ -e $TAGENT_BASE/run/$runUser ]; then
                 perl -i -pe s/tagent\.id=.*/tagent.id=/ $TAGENT_BASE/run/$runUser/conf/tagent.conf
         fi
 }
 
-linux7_install(){
+linux7_install() {
         svcRoot='/usr/lib/systemd/system'
-        if [ ! -e "$svcRoot" ] && [ -e '/lib/systemd/system' ]
-        then
-           svcRoot='/lib/systemd/system'
+        if [ ! -e "$svcRoot" ] && [ -e '/lib/systemd/system' ]; then
+                svcRoot='/lib/systemd/system'
         fi
 
-        if [ "$runUser" = "root" ]
-        then
+        if [ "$runUser" = "root" ]; then
                 cp $CWD/tagent.service $svcRoot/tagent.service
                 perl -i -pe "s/TAGENT_BASE/$basePrefix/g" $svcRoot/tagent.service
                 perl -i -pe "s/TAGENT_HOME/$homePrefix/g" $svcRoot/tagent.service
@@ -97,21 +105,20 @@ linux7_install(){
         fi
 }
 
-linux_install(){
-        if [ "$runUser" = "root" ]
-        then
+linux_install() {
+        if [ "$runUser" = "root" ]; then
                 cp $CWD/tagent.init.d /etc/init.d/tagent
                 perl -i -pe "s/^\s*RUN_USER=/RUN_USER=root/" /etc/init.d/tagent
                 perl -i -pe "s/^\s*TAGENT_BASE=/TAGENT_BASE=$basePrefix/" /etc/init.d/tagent
-	        chmod 755 /etc/init.d/tagent
-	        chkconfig --add tagent
-	        chkconfig --level=3 tagent on
-	        chkconfig --level=4 tagent on
-	        chkconfig --level=5 tagent on
+                chmod 755 /etc/init.d/tagent
+                chkconfig --add tagent
+                chkconfig --level=3 tagent on
+                chkconfig --level=4 tagent on
+                chkconfig --level=5 tagent on
 
                 service tagent start
-	        echo "Service tagent installed."
-	else
+                echo "Service tagent installed."
+        else
                 cp $CWD/tagent.init.d /etc/init.d/tagent-$runUser
                 perl -i -pe "s/^\s*RUN_USER=/RUN_USER=$runUser/" /etc/init.d/tagent-$runUser
                 perl -i -pe "s/^\s*TAGENT_BASE=/TAGENT_BASE=$basePrefix/" /etc/init.d/tagent-$runUser
@@ -123,12 +130,11 @@ linux_install(){
 
                 service tagent-$runUser start
                 echo "Service tagent-$runUser installed."
-	fi
+        fi
 }
 
-aix_install(){
-        if [ "$runUser" = "root" ]
-        then
+aix_install() {
+        if [ "$runUser" = "root" ]; then
                 #add entry tagent to /etc/inittab
                 mkitab "tagent:2:wait:$TAGENT_BASE/bin/tagent start $TAGENT_HOME > /dev/console 2>&1"
                 $TAGENT_BASE/bin/tagent start $TAGENT_HOME
@@ -142,13 +148,12 @@ aix_install(){
         fi
 }
 
-sunos_install(){
-        if [ "$runUser" = "root" ]
-        then
+sunos_install() {
+        if [ "$runUser" = "root" ]; then
                 #generate tagent.xml in /lib/svc/manifest/site/tagent.xml
                 svcbundle -i -s service-name=application/tagent \
-                          -s start-method="$TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
-                          -s stop-method="$TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
+                        -s start-method="$TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
+                        -s stop-method="$TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
                 #start the service, must use option '-t', disable without option '-t' will disable the service permently
                 svcadm enable -t application/tagent
 
@@ -156,8 +161,8 @@ sunos_install(){
         else
                 #generate tagent-$runUser.xml in /lib/svc/manifest/site/tagent-$runUser.xml
                 svcbundle -i -s service-name=application/tagent-$runUser \
-                          -s start-method="sudo -u $runUser $TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
-                          -s stop-method="sudo -u $runUser $TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
+                        -s start-method="sudo -u $runUser $TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
+                        -s stop-method="sudo -u $runUser $TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
                 #start the service, must use option '-t', disable without option '-t' will disable the service permently
                 svcadm enable -t application/tagent-$runUser
 
@@ -165,15 +170,13 @@ sunos_install(){
         fi
 }
 
-linux7_uninstall(){
+linux7_uninstall() {
         svcRoot='/usr/lib/systemd/system'
-        if [ ! -e "$svcRoot" ] && [ -e '/lib/systemd/system' ]
-        then
-           svcRoot='/lib/systemd/system'
+        if [ ! -e "$svcRoot" ] && [ -e '/lib/systemd/system' ]; then
+                svcRoot='/lib/systemd/system'
         fi
 
-        if [ "$runUser" = "root" ]
-        then
+        if [ "$runUser" = "root" ]; then
                 systemctl stop tagent
                 systemctl disable tagent.service
                 rm $svcRoot/tagent.service
@@ -190,26 +193,24 @@ linux7_uninstall(){
         fi
 }
 
-linux_uninstall(){
-        if [ "$runUser" = "root" ]
-        then
+linux_uninstall() {
+        if [ "$runUser" = "root" ]; then
                 service tagent stop
-        	chkconfig --del tagent
-	        rm /etc/init.d/tagent
-	        echo "Service tagent uninstalled."
-	        chkconfig --list | grep tagent
-	else
+                chkconfig --del tagent
+                rm /etc/init.d/tagent
+                echo "Service tagent uninstalled."
+                chkconfig --list | grep tagent
+        else
                 service tagent-$runUser stop
                 chkconfig --del tagent-$runUser
                 rm /etc/init.d/tagent-$runUser
                 echo "Service tagent-$runUser uninstalled."
                 chkconfig --list | grep tagent-$runUser
-	fi
+        fi
 }
 
-aix_uninstall(){
-        if [ "$runUser" = "root" ]
-        then
+aix_uninstall() {
+        if [ "$runUser" = "root" ]; then
                 $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
                 #remove entry tagent in /etc/inittab
                 rmitab "tagent"
@@ -222,9 +223,8 @@ aix_uninstall(){
         fi
 }
 
-sunos_uninstall(){
-        if [ "$runUser" = "root" ]
-        then
+sunos_uninstall() {
+        if [ "$runUser" = "root" ]; then
                 #disable tagent service permently
                 svcadm disable application/tagent
                 rm /lib/svc/manifest/site/tagent.xml
@@ -239,35 +239,33 @@ sunos_uninstall(){
         echo "Service tagent-$runUser uninstalled."
 }
 
-kernel=`uname -s 2>&1`
+kernel=$(uname -s 2>&1)
 
-
-if [ "$action" = "uninstall" ]
-then
+if [ "$action" = "uninstall" ]; then
         case "$kernel" in
-          Linux)
-            #initType=`pidof systemd && echo "systemd" || echo "sysvinit"`
-            #pidof systemd > /dev/null && initType="systemd" || initType="sysvinit"
-            ps -p1 |grep systemd >/dev/null && initType="systemd" || initType="sysvinit"
-            if [ "$initType" = "sysvinit" ]
-            then
+        Linux)
+                #initType=`pidof systemd && echo "systemd" || echo "sysvinit"`
+                #pidof systemd > /dev/null && initType="systemd" || initType="sysvinit"
+                ps -p1 | grep systemd >/dev/null && initType="systemd" || initType="sysvinit"
+                if [ "$initType" = "sysvinit" ]; then
+                        linux_uninstall
+                else
+                        linux7_uninstall
+                fi
+                ;;
+        FreeBSD)
                 linux_uninstall
-            else
-                linux7_uninstall
-            fi
-            ;;
-          FreeBSD)
-            linux_uninstall
-            ;;
-          AIX)
-            aix_uninstall
-            ;;
-          SunOs)
-            sunos_uninstall
-            ;;
-          *)
-            echo $"Uninstall service on $kernel not support yet."
-            exit 2
+                ;;
+        AIX)
+                aix_uninstall
+                ;;
+        SunOs)
+                sunos_uninstall
+                ;;
+        *)
+                echo $"Uninstall service on $kernel not support yet."
+                exit 2
+                ;;
         esac
 
         clean_tagent_id
@@ -275,29 +273,28 @@ else
         generate_user_conf
 
         case "$kernel" in
-          Linux)
-            #initType=`pidof systemd && echo "systemd" || echo "sysvinit"`
-            #pidof systemd > /dev/null && initType="systemd" || initType="sysvinit"
-            ps -p1 |grep systemd >/dev/null && initType="systemd" || initType="sysvinit"
-            if [ "$initType" = "sysvinit" ]
-            then
+        Linux)
+                #initType=`pidof systemd && echo "systemd" || echo "sysvinit"`
+                #pidof systemd > /dev/null && initType="systemd" || initType="sysvinit"
+                ps -p1 | grep systemd >/dev/null && initType="systemd" || initType="sysvinit"
+                if [ "$initType" = "sysvinit" ]; then
+                        linux_install
+                else
+                        linux7_install
+                fi
+                ;;
+        FreeBSD)
                 linux_install
-            else
-                linux7_install
-            fi
-            ;;
-          FreeBSD)
-            linux_install
-            ;;
-          AIX)
-            aix_install
-            ;;
-          SunOS)
-            sunos_install
-            ;;
-          *)
-            echo $"Install service on $kernel not support yet."
-            exit 2
+                ;;
+        AIX)
+                aix_install
+                ;;
+        SunOS)
+                sunos_install
+                ;;
+        *)
+                echo $"Install service on $kernel not support yet."
+                exit 2
+                ;;
         esac
 fi
-
