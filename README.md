@@ -26,7 +26,7 @@ bash install.sh --user app --port 2020 --tenant develop --pkgurl http://192.168.
 上传安装包到服务器，解压到/opt/tagent
 ```shell
 cd /opt/tagent
-./setup.sh --tenant develop --serveraddr http://192.168.1.140:8084
+./setup.sh --action install --tenant develop --serveraddr http://192.168.1.140:8084
 ```
 
 ### Windows
@@ -34,4 +34,21 @@ cd /opt/tagent
 ```shell
 cd c:\tagent
 service-install.bat http://192.168.1.140:8084 develop
+```
+
+
+## 手动卸载
+### Linux|Unix
+```shell
+cd /opt/tagent
+./setup.sh --action uninstall
+cd /opt
+rm -rf /opt/tagent
+```
+
+### Windows
+```shell
+cd c:\tagent
+service-uninstall.bat
+rd /s /q c:\tagent
 ```
