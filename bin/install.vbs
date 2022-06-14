@@ -1,5 +1,4 @@
 Option Explicit
-Const ForWriting = 2
 
 Function usage()
 
@@ -32,7 +31,7 @@ Function DownloadPkg(pkgUrl, userName, password, savePath, tempPath)
 
 		Dim objOutStream, objFSO, objShell
 		Set objFSO = CreateObject("Scripting.FileSystemObject")
-		Set objOutStream = objFSO.OpenTextFile(tempPath & "\session.txt", ForWriting, True)
+		Set objOutStream = objFSO.OpenTextFile(tempPath & "\session.txt", 2, True)
 		With objOutStream
 			.WriteLine userName   ' USERNAME
 			.WriteLine password     ' Password
