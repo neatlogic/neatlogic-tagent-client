@@ -7,18 +7,29 @@ Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安�
 ### 获取子目录bin下的install.sh或者install.vbs(Windows)
 自动安装需要在某个可以http或ftp下载的地方放置tagent的安装包
 
+### Linux|Unix
 ```shell
 #Linux安装，以root用户运行
 cd /tmp
-curl -o install.sh http://myserver.com.cn/autoscripts/install.sh
+curl -o install.sh http://192.168.0.26:8080/download/tagent-bootstrap/install.sh
 bash install.sh --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
 ```
 
 ```shell
 #Linux安装，以app用户运行，监听2020端口
 cd /tmp
-curl -o install.sh http://myserver.com.cn/autoscripts/install.sh
+curl -o install.sh http://192.168.0.26:8080/download/tagent-bootstrap/install.sh
 bash install.sh --user app --port 2020 --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
+```
+
+### Windows
+```shell
+#Open cmd.exec in Administrator mode
+cd "%Temp%"
+#use browser downlaod install.vbs to directory:%Temp%
+#http://192.168.0.26:8080/download/tagent-bootstrap/install.vbs
+
+cscript install.vbs /tenant:develop /pkgurl:http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar /serveraddr:http://192.168.1.140:8084
 ```
 
 ## 手动安装
