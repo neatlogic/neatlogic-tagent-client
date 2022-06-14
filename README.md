@@ -4,7 +4,7 @@ Linux｜Unix安装包：tagent_linux.tar
 Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安装包内嵌了Perl运行时和7z工具）
 
 ## 自动安装
-### 获取install.sh或者install.vbs(Windows)
+### 获取子目录bin下的install.sh或者install.vbs(Windows)
 自动安装需要在某个可以http或ftp下载的地方放置tagent的安装包
 
 ```shell
