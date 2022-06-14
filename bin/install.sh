@@ -10,9 +10,10 @@ usage() {
 	echo "--pkgurl: Agent install package download url, support http|https|ftp"
 	echo "--downloaduser: Access download url username, default:none"
 	echo "--downloadpwd: Access download url password, defualt:none"
-	echo "--registerurl: Agent register call back Restful api url"
+	echo "--serveraddr: Agent register call back http base url"
+	echo "--tenant: System tenant"
 	echo ""
-	echo "Example:$pname --user root --port 3939 --pkgurl http://abc.com/service/tagent.tar --registerurl 'http://192.168.0.88:8080/autoexecrunner/public/api/rest/tagent/register?tenant=develop'"
+	echo "Example:$pname --user root --port 3939 --tenant develop --pkgurl http://abc.com/service/tagent.tar --serveraddr 'http://192.168.0.88:8080'"
 	exit -1
 }
 
@@ -46,8 +47,8 @@ parseOpts() {
 				PKG_URL="${!OPTIND}"
 				OPTIND=$(($OPTIND + 1))
 				;;
-			registerurl)
-				REGISTER_URL="${!OPTIND}"
+			serveraddr)
+				SRV_ADDR="${!OPTIND}"
 				OPTIND=$(($OPTIND + 1))
 				;;
 			*)
@@ -143,7 +144,7 @@ else
 	exit 4
 fi
 
-cd "$INS_DIR/bin" && ./setup.sh install $USER_RUNON $PORT "$REG_URL"
+cd "$INS_DIR/bin" && ./setup.sh --action install --tenant "$TENANT" --serveraddr "$SRV_ADDR" --user "$USER_RUNON" --port "$PORT"
 
 if [ $? = 0 ]; then
 	echo "INFO: Tagent install success."

@@ -2,18 +2,18 @@ Option Explicit
 Const ForWriting = 2
 
 Function usage()
-	Wscript.Echo("Usage: install.vbs <pkgUrl>")
-	Wscript.Echo("Usage:")
-	Wscript.Echo("install.vbs /prefix:InstallDirectory /port:ListenPort /pkgurl:PACKAGE_URL /downloaduser:Download_User /downloadpwd:Download_Password /registerurl:REGISTER_URL")
+
+	Wscript.Echo("Usage:install.vbs /prefix:InstallDirectory /port:ListenPort /pkgurl:PACKAGE_URL /downloaduser:Download_User /downloadpwd:Download_Password /serveraddr:REGISTER_URL /tenant:Tenant")
 	Wscript.Echo("")
 	Wscript.Echo("/prefix: Directory to install, default:/opt/tagent")
 	Wscript.Echo("/port: Agent listen port, default:3939")
 	Wscript.Echo("/pkgurl: Agent install package download url, support http|https|ftp")
 	Wscript.Echo("/downloaduser: Access download url username, default:none")
 	Wscript.Echo("/downloadpwd: Access download url password, defualt:none")
-	Wscript.Echo("/registerurl: Agent register call back Restful api url")
+	Wscript.Echo("/serveraddr: Agent register call back http base url")
+	Wscript.Echo("/tenant: System tenant")
 	Wscript.Echo("")
-	Wscript.Echo("Example:install.vbs /port:3939 /pkgurl:""http://abc.com/service/tagent.tar"" /registerurl:""http://192.168.0.88:8080/autoexecrunner/public/api/rest/tagent/register?tenant=develop""")
+	Wscript.Echo("Example:install.vbs /port:3939 /pkgurl:""http://abc.com/service/tagent.tar"" /serveraddr:""http://192.168.0.88:8080/autoexecrunner/public/api/rest/tagent/register?tenant=develop"" /tenant:test")
 	WScript.Quit(1)
 End Function
 
@@ -103,11 +103,15 @@ If colArgs.Exists("downloadpwd") Then
 	password = colArgs.Item("downloadpwd")
 End If
 
-Dim regUrl
-If colArgs.Exists("regurl") Then
-	regUrl = colArgs.Item("regurl")
+Dim srvAddr
+If colArgs.Exists("serveraddr") Then
+	srvAddr = colArgs.Item("serveraddr")
 End If
 
+Dim tenant
+If colArgs.Exists("tenant") Then
+	tenant = colArgs.Item("tenant")
+End If
 
 IF IsNull(pkgUrl) Or IsEmpty(pkgUrl) Then
 	Wscript.Echo("ERROR: option /pkgurl not provided.")
@@ -115,7 +119,7 @@ IF IsNull(pkgUrl) Or IsEmpty(pkgUrl) Then
 End If
 
 Dim wshShell
-Set wshShell = CreateObject("WScript.Shell")
+Set wshShell = WScript.CreateObject("WScript.Shell")
 Dim tempPath
 tempPath = wshShell.ExpandEnvironmentStrings("%TEMP%")
 
@@ -141,7 +145,7 @@ Set objShell = Nothing
 wshShell.CurrentDirectory = installPath
 
 Dim errCode
-errCode = wshShell.Run("service-install.bat",,True)
+errCode = wshShell.Run("service-install.bat " & srvAddr & " " & tenant, ,True)
 Set wshShell = Nothing
 
 If errCode <> 0 Then

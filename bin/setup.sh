@@ -1,51 +1,85 @@
 #!/bin/sh
-
-runUser=root
-action=install
-
-if [ $# -gt 0 ]; then
-        action=$1
-        runUser=$2
-else
-        echo "Usagen: tagent install|uninstall [User Run on] [port] [Register Url]"
+usage() {
+        pname=$(basename $0)
+        echo "Usage:"
+        echo "$pname --action {install|uninstall} --runuser USER_RunON --port ListenPort --registerurl REGISTER_URL --tenant Tenant"
+        echo ""
+        echo "--action: install|uninstall"
+        echo "--user: User to run on, default:root"
+        echo "--port: Agent listen port, default:3939"
+        echo "--serveraddr: Agent register call back http addr"
+        echo "--tenant: System teanant"
+        echo ""
+        echo "Example:$pname --user root --port 3939 --tenant develop --serveraddr 'http://192.168.0.88:8080'"
         exit -1
+}
+
+parseOpts() {
+        OPT_SPEC=":h-:"
+        while getopts "$OPT_SPEC" optchar; do
+                case "${optchar}" in
+                -)
+                        case "${OPTARG}" in
+                        action)
+                                ACTION="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        runuser)
+                                USER_RUNON="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        port)
+                                PORT="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        serveraddr)
+                                SRV_ADDR="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        tenant)
+                                TENANT="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        *)
+                                if [ "$OPTERR" = 1 ] && [ "${OPT_SPEC:0:1}" != ":" ]; then
+                                        echo "Unknown option --${OPTARG}" >&2
+                                fi
+                                ;;
+                        esac
+                        ;;
+                h)
+                        usage
+                        exit 2
+                        ;;
+                *)
+                        if [ "$OPTERR" != 1 ] || [ "${OPT_SPEC:0:1}" = ":" ]; then
+                                echo "Non-option argument: '-${OPTARG}'" >&2
+                        fi
+                        ;;
+                esac
+        done
+}
+
+parseOpts "$@"
+
+if [ -z "$USER_RUNON" ]; then
+        USER_RUNON="root"
 fi
 
-port=3939
-if [ $# -gt 2 ]; then
-        port=$3
+if [ -z "$PORT" ]; then
+        PORT="3939"
 fi
 
-registerUrl=""
-if [ $# -gt 3 ]; then
-        registerUrl=$4
+if [ -z "$TENANT" ]; then
+        TENANT="test"
 fi
 
-if [ "$runUser" = "" ]; then
-        runUser=root
-fi
+echo "INFO: $ACTION tagent on user $USER_RUNON."
 
-if [ "$action" = "help" ]; then
-        echo "Usagen: setup.sh [install|uninstall] [user name]"
-        echo "	example:setup.sh install root 3939"
-        echo "	example:setup.sh uninstall root"
-        echo "	example:setup.sh install app 4949"
-        echo "	example:setup.sh uninstall app"
-        exit 0
-fi
+CWD=$(cd $(dirname $0) && pwd)
 
-echo "INFO:$action tagent on user $runUser."
-
-CWD=$(
-        cd $(dirname $0)
-        pwd
-)
-
-TAGENT_BASE=$(
-        cd $(dirname $0)/..
-        pwd
-)
-TAGENT_HOME=$TAGENT_BASE/run/$runUser
+TAGENT_BASE=$(cd $(dirname $0)/.. && pwd)
+TAGENT_HOME=$TAGENT_BASE/run/$USER_RUNON
 echo "TAGENT_BASE:$TAGENT_BASE."
 #basePrefix=${TAGENT_BASE//\//\\\/}
 #homePrefix=${TAGENT_HOME//\//\\\/}
@@ -55,24 +89,33 @@ homePrefix=$(echo $TAGENT_HOME | sed -e 's/\//\\\//g')
 chmod 755 $CWD/tagent.init.d
 
 generate_user_conf() {
-        if [ ! -z "$registerUrl"]; then
-                REG_URL=$registerUrl
-                perl -i -pe "s/proxy\.registeraddress=.*/proxy.registeraddress=$ENV{REG_URL}/" $TAGENT_BASE/conf/tagent.conf
+        if [ ! -z "$SRV_ADDR" ]; then
+                #旧版本自动化
+                #REG_URL="$SRV_ADDR/octopus-proxy/tagent/registerTagentInfoApi"
+                CONTEXT_URI="/octopus-proxy/tagent/registerTagentInfoApi"
+                #新版本自动化
+                REG_URL="$SRV_ADDR/autoexecrunner/public/api/rest/tagent/register?tenant=$TENANT"
+                ####
+                perl -i -pe "s/proxy\.registeraddress=.*/proxy.registeraddress=$ENV{REG_URL}/g" $TAGENT_BASE/conf/tagent.conf
         fi
 
-        if [ ! -e $TAGENT_BASE/run/$runUser ]; then
-                mkdir $TAGENT_BASE/run/$runUser
-                mkdir $TAGENT_BASE/run/$runUser/logs
-                mkdir $TAGENT_BASE/run/$runUser/tmp
-                cp -rf $TAGENT_BASE/conf $TAGENT_BASE/run/$runUser
-                perl -i -pe "s/listen\.port=.*/listen.port=$port/g" $TAGENT_BASE/run/$runUser/conf/tagent.conf
-                chown -R $runUser $TAGENT_BASE/run/$runUser
+        if [ ! -z "$TENANT" ]; then
+                perl -i -pe "s/tenant=.*/tenant=$TENANT/g" $TAGENT_BASE/conf/tagent.conf
+        fi
+
+        if [ ! -e $TAGENT_BASE/run/$USER_RUNON ]; then
+                mkdir $TAGENT_BASE/run/$USER_RUNON
+                mkdir $TAGENT_BASE/run/$USER_RUNON/logs
+                mkdir $TAGENT_BASE/run/$USER_RUNON/tmp
+                cp -rf $TAGENT_BASE/conf $TAGENT_BASE/run/$USER_RUNON
+                perl -i -pe "s/listen\.port=.*/listen.port=$port/g" $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
+                chown -R $USER_RUNON $TAGENT_BASE/run/$USER_RUNON
         fi
 }
 
 clean_tagent_id() {
-        if [ -e $TAGENT_BASE/run/$runUser ]; then
-                perl -i -pe s/tagent\.id=.*/tagent.id=/ $TAGENT_BASE/run/$runUser/conf/tagent.conf
+        if [ -e $TAGENT_BASE/run/$USER_RUNON ]; then
+                perl -i -pe s/tagent\.id=.*/tagent.id=/ $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
         fi
 }
 
@@ -82,7 +125,7 @@ linux7_install() {
                 svcRoot='/lib/systemd/system'
         fi
 
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 cp $CWD/tagent.service $svcRoot/tagent.service
                 perl -i -pe "s/TAGENT_BASE/$basePrefix/g" $svcRoot/tagent.service
                 perl -i -pe "s/TAGENT_HOME/$homePrefix/g" $svcRoot/tagent.service
@@ -93,20 +136,20 @@ linux7_install() {
 
                 echo "Service tagent installed."
         else
-                cp $CWD/tagent.service $svcRoot/tagent-$runUser.service
-                perl -i -pe "s/TAGENT_BASE/$basePrefix/g" $svcRoot/tagent-$runUser.service
-                perl -i -pe "s/TAGENT_HOME/$homePrefix/g" $svcRoot/tagent-$runUser.service
-                perl -i -pe "s/SUDO/$runUser/g" $svcRoot/tagent-$runUser.service
+                cp $CWD/tagent.service $svcRoot/tagent-$USER_RUNON.service
+                perl -i -pe "s/TAGENT_BASE/$basePrefix/g" $svcRoot/tagent-$USER_RUNON.service
+                perl -i -pe "s/TAGENT_HOME/$homePrefix/g" $svcRoot/tagent-$USER_RUNON.service
+                perl -i -pe "s/SUDO/$USER_RUNON/g" $svcRoot/tagent-$USER_RUNON.service
                 systemctl daemon-reload
-                systemctl enable tagent-$runUser.service
-                systemctl start tagent-$runUser.service
+                systemctl enable tagent-$USER_RUNON.service
+                systemctl start tagent-$USER_RUNON.service
 
-                echo "Service tagent-$runUser installed."
+                echo "Service tagent-$USER_RUNON installed."
         fi
 }
 
 linux_install() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 cp $CWD/tagent.init.d /etc/init.d/tagent
                 perl -i -pe "s/^\s*RUN_USER=/RUN_USER=root/" /etc/init.d/tagent
                 perl -i -pe "s/^\s*TAGENT_BASE=/TAGENT_BASE=$basePrefix/" /etc/init.d/tagent
@@ -119,37 +162,37 @@ linux_install() {
                 service tagent start
                 echo "Service tagent installed."
         else
-                cp $CWD/tagent.init.d /etc/init.d/tagent-$runUser
-                perl -i -pe "s/^\s*RUN_USER=/RUN_USER=$runUser/" /etc/init.d/tagent-$runUser
-                perl -i -pe "s/^\s*TAGENT_BASE=/TAGENT_BASE=$basePrefix/" /etc/init.d/tagent-$runUser
-                chmod 755 /etc/init.d/tagent-$runUser
-                chkconfig --add tagent-$runUser
-                chkconfig --level=3 tagent-$runUser on
-                chkconfig --level=4 tagent-$runUser on
-                chkconfig --level=5 tagent-$runUser on
+                cp $CWD/tagent.init.d /etc/init.d/tagent-$USER_RUNON
+                perl -i -pe "s/^\s*RUN_USER=/RUN_USER=$USER_RUNON/" /etc/init.d/tagent-$USER_RUNON
+                perl -i -pe "s/^\s*TAGENT_BASE=/TAGENT_BASE=$basePrefix/" /etc/init.d/tagent-$USER_RUNON
+                chmod 755 /etc/init.d/tagent-$USER_RUNON
+                chkconfig --add tagent-$USER_RUNON
+                chkconfig --level=3 tagent-$USER_RUNON on
+                chkconfig --level=4 tagent-$USER_RUNON on
+                chkconfig --level=5 tagent-$USER_RUNON on
 
-                service tagent-$runUser start
-                echo "Service tagent-$runUser installed."
+                service tagent-$USER_RUNON start
+                echo "Service tagent-$USER_RUNON installed."
         fi
 }
 
 aix_install() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 #add entry tagent to /etc/inittab
                 mkitab "tagent:2:wait:$TAGENT_BASE/bin/tagent start $TAGENT_HOME > /dev/console 2>&1"
                 $TAGENT_BASE/bin/tagent start $TAGENT_HOME
                 echo "Service tagent installed."
         else
-                #add entry tagent-$runUser to /etc/inittab
-                mkitab "tagent-$runUser:2:wait:sudo -u $runUser $TAGENT_BASE/bin/tagent start $TAGENT_HOME > /dev/console 2>&1"
-                sudo -u $runUser $TAGENT_BASE/bin/tagent start $TAGENT_HOME
+                #add entry tagent-$USER_RUNON to /etc/inittab
+                mkitab "tagent-$USER_RUNON:2:wait:sudo -u $USER_RUNON $TAGENT_BASE/bin/tagent start $TAGENT_HOME > /dev/console 2>&1"
+                sudo -u $USER_RUNON $TAGENT_BASE/bin/tagent start $TAGENT_HOME
 
-                echo "Service tagent-$runUser installed."
+                echo "Service tagent-$USER_RUNON installed."
         fi
 }
 
 sunos_install() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 #generate tagent.xml in /lib/svc/manifest/site/tagent.xml
                 svcbundle -i -s service-name=application/tagent \
                         -s start-method="$TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
@@ -159,14 +202,14 @@ sunos_install() {
 
                 echo "Service tagent-root installed."
         else
-                #generate tagent-$runUser.xml in /lib/svc/manifest/site/tagent-$runUser.xml
-                svcbundle -i -s service-name=application/tagent-$runUser \
-                        -s start-method="sudo -u $runUser $TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
-                        -s stop-method="sudo -u $runUser $TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
+                #generate tagent-$USER_RUNON.xml in /lib/svc/manifest/site/tagent-$USER_RUNON.xml
+                svcbundle -i -s service-name=application/tagent-$USER_RUNON \
+                        -s start-method="sudo -u $USER_RUNON $TAGENT_BASE/bin/tagent start $TAGENT_HOME" \
+                        -s stop-method="sudo -u $USER_RUNON $TAGENT_BASE/bin/tagent stop $TAGENT_HOME"
                 #start the service, must use option '-t', disable without option '-t' will disable the service permently
-                svcadm enable -t application/tagent-$runUser
+                svcadm enable -t application/tagent-$USER_RUNON
 
-                echo "Service tagent-$runUser installed."
+                echo "Service tagent-$USER_RUNON installed."
         fi
 }
 
@@ -176,7 +219,7 @@ linux7_uninstall() {
                 svcRoot='/lib/systemd/system'
         fi
 
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 systemctl stop tagent
                 systemctl disable tagent.service
                 rm $svcRoot/tagent.service
@@ -184,64 +227,64 @@ linux7_uninstall() {
                 echo "Service tagent uninstalled."
                 systemctl list-unit-files | grep tagent
         else
-                systemctl stop tagent-$runUser
-                systemctl disable tagent-$runUser.service
-                rm $svcRoot/tagent-$runUser.service
+                systemctl stop tagent-$USER_RUNON
+                systemctl disable tagent-$USER_RUNON.service
+                rm $svcRoot/tagent-$USER_RUNON.service
                 systemctl daemon-reload
                 echo "Service tagent uninstalled."
-                systemctl list-unit-files | grep tagent-$runUser
+                systemctl list-unit-files | grep tagent-$USER_RUNON
         fi
 }
 
 linux_uninstall() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 service tagent stop
                 chkconfig --del tagent
                 rm /etc/init.d/tagent
                 echo "Service tagent uninstalled."
                 chkconfig --list | grep tagent
         else
-                service tagent-$runUser stop
-                chkconfig --del tagent-$runUser
-                rm /etc/init.d/tagent-$runUser
-                echo "Service tagent-$runUser uninstalled."
-                chkconfig --list | grep tagent-$runUser
+                service tagent-$USER_RUNON stop
+                chkconfig --del tagent-$USER_RUNON
+                rm /etc/init.d/tagent-$USER_RUNON
+                echo "Service tagent-$USER_RUNON uninstalled."
+                chkconfig --list | grep tagent-$USER_RUNON
         fi
 }
 
 aix_uninstall() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
                 #remove entry tagent in /etc/inittab
                 rmitab "tagent"
                 echo "Service tagent uninstalled."
         else
-                sudo -u $runUser $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
-                #remove entry tagent-$runUser in /etc/inittab
-                rmitab "tagent-$runUser"
-                echo "Service tagent-$runUser uninstalled."
+                sudo -u $USER_RUNON $TAGENT_BASE/bin/tagent stop $TAGENT_HOME
+                #remove entry tagent-$USER_RUNON in /etc/inittab
+                rmitab "tagent-$USER_RUNON"
+                echo "Service tagent-$USER_RUNON uninstalled."
         fi
 }
 
 sunos_uninstall() {
-        if [ "$runUser" = "root" ]; then
+        if [ "$USER_RUNON" = "root" ]; then
                 #disable tagent service permently
                 svcadm disable application/tagent
                 rm /lib/svc/manifest/site/tagent.xml
                 svcadm restart manifest-import
                 echo "Service tagent uninstalled."
         else
-                #disable tagent-$runUser service permently
-                svcadm disable application/tagent-$runUser
-                rm /lib/svc/manifest/site/tagent-$runUser.xml
+                #disable tagent-$USER_RUNON service permently
+                svcadm disable application/tagent-$USER_RUNON
+                rm /lib/svc/manifest/site/tagent-$USER_RUNON.xml
                 svcadm restart manifest-import
         fi
-        echo "Service tagent-$runUser uninstalled."
+        echo "Service tagent-$USER_RUNON uninstalled."
 }
 
 kernel=$(uname -s 2>&1)
 
-if [ "$action" = "uninstall" ]; then
+if [ "$ACTION" = "uninstall" ]; then
         case "$kernel" in
         Linux)
                 #initType=`pidof systemd && echo "systemd" || echo "sysvinit"`
