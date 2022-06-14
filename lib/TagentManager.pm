@@ -848,6 +848,10 @@ sub getPosixProcCpuAndMem {
         my $allPid = <$pidFh>;
         close($pidFh);
 
+        if ( not defined($allPid) ) {
+            $allPid = '';
+        }
+
         my @pids = split( /\s+/, $allPid );
         push( @pids, $$ );
 
