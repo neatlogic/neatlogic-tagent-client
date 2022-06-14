@@ -74,6 +74,11 @@ if [ -z "$TENANT" ]; then
         TENANT="test"
 fi
 
+if [ -z "$ACTION" ]; then
+        echo "ERROR: Option --action not defined."
+        usage
+fi
+
 echo "INFO: $ACTION tagent on user $USER_RUNON."
 
 CWD=$(cd $(dirname $0) && pwd)
