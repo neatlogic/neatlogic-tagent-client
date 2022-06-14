@@ -92,11 +92,10 @@ generate_user_conf() {
         if [ ! -z "$SRV_ADDR" ]; then
                 #旧版本自动化
                 #REG_URL="$SRV_ADDR/octopus-proxy/tagent/registerTagentInfoApi"
-                CONTEXT_URI="/octopus-proxy/tagent/registerTagentInfoApi"
                 #新版本自动化
-                REG_URL="$SRV_ADDR/autoexecrunner/public/api/rest/tagent/register?tenant=$TENANT"
+                export REG_URL="$SRV_ADDR/autoexecrunner/public/api/rest/tagent/register?tenant=$TENANT"
                 ####
-                perl -i -pe "s/proxy\.registeraddress=.*/proxy.registeraddress=$ENV{REG_URL}/g" $TAGENT_BASE/conf/tagent.conf
+                perl -i -pe 's/proxy\.registeraddress=.*/proxy.registeraddress=$ENV{REG_URL}/g' $TAGENT_BASE/conf/tagent.conf
         fi
 
         if [ ! -z "$TENANT" ]; then
@@ -108,7 +107,7 @@ generate_user_conf() {
                 mkdir $TAGENT_BASE/run/$USER_RUNON/logs
                 mkdir $TAGENT_BASE/run/$USER_RUNON/tmp
                 cp -rf $TAGENT_BASE/conf $TAGENT_BASE/run/$USER_RUNON
-                perl -i -pe "s/listen\.port=.*/listen.port=$port/g" $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
+                perl -i -pe "s/listen\.port=.*/listen.port=$PORT/g" $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
                 chown -R $USER_RUNON $TAGENT_BASE/run/$USER_RUNON
         fi
 }

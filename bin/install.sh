@@ -51,6 +51,10 @@ parseOpts() {
 				SRV_ADDR="${!OPTIND}"
 				OPTIND=$(($OPTIND + 1))
 				;;
+			tenant)
+				TENANT="${!OPTIND}"
+				OPTIND=$(($OPTIND + 1))
+				;;
 			*)
 				if [ "$OPTERR" = 1 ] && [ "${OPT_SPEC:0:1}" != ":" ]; then
 					echo "Unknown option --${OPTARG}" >&2
@@ -88,6 +92,10 @@ fi
 
 if [ -z "$PORT" ]; then
 	PORT="3939"
+fi
+
+if [ -z "$TENANT" ]; then
+	TENANT="test"
 fi
 
 #是否安装perl
@@ -132,6 +140,10 @@ else
 	else
 		echo "ERROR: Can not find curl or wget to download install package, install failed."
 	fi
+fi
+
+if [ ! -e "$INS_DIR" ]; then
+	mkdir -p "$INS_DIR"
 fi
 
 # tagent 压缩包解压
