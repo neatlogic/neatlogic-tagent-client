@@ -36,13 +36,17 @@ cscript install.vbs /tenant:develop /pkgurl:http://192.168.0.26:8080/download/ta
 ### Linux|Unix
 上传安装包到服务器，解压到/opt/tagent
 ```shell
-cd /opt/tagent
+mkdir /opt/tagent
+tar -C /opt/tagent -xvf tagent.tar
+cd /opt/tagent/bin
 ./setup.sh --action install --tenant develop --serveraddr http://192.168.1.140:8084
 ```
 
 ### Windows
 上传安装包到服务器，解压到c:/tagent
 ```shell
+mkdir c:\tagent
+#解压到c:/tagent
 cd c:\tagent
 service-install.bat http://192.168.1.140:8084 develop
 ```
@@ -51,7 +55,7 @@ service-install.bat http://192.168.1.140:8084 develop
 ## 手动卸载
 ### Linux|Unix
 ```shell
-cd /opt/tagent
+cd /opt/tagent/bin
 ./setup.sh --action uninstall
 cd /opt
 rm -rf /opt/tagent
