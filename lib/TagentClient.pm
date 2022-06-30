@@ -1009,7 +1009,7 @@ sub download {
                             $wrtLen = syswrite( $pipe, $chunk );
                             if ( not defined($wrtLen) ) {
                                 $status = -1;
-                                print("ERROR: $!\n");
+                                die("Untar failed, $!\n");
                             }
                         }
                     } while ( defined($chunk) );
