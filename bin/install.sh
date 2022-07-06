@@ -6,6 +6,7 @@ usage() {
 	echo ""
 	echo "--prefix: Directory to install, default:/opt/tagent"
 	echo "--user: User to run on, default:root"
+	echo "--listenaddr: Agent listen addr, default:0.0.0.0"
 	echo "--port: Agent listen port, default:3939"
 	echo "--pkgurl: Agent install package download url, support http|https|ftp"
 	echo "--downloaduser: Access download url username, default:none"

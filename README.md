@@ -12,14 +12,14 @@ Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安�
 #Linux安装，以root用户运行
 cd /tmp
 curl -o install.sh http://192.168.0.26:8080/download/tagent-bootstrap/install.sh
-bash install.sh --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
+bash install.sh --listenaddr 0.0.0.0 --port 3939 --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
 ```
 
 ```shell
 #Linux安装，以app用户运行，监听2020端口
 cd /tmp
 curl -o install.sh http://192.168.0.26:8080/download/tagent-bootstrap/install.sh
-bash install.sh --user app --port 2020 --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
+bash install.sh --user app --listenaddr 0.0.0.0 --port 2020 --tenant develop --pkgurl http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar --serveraddr http://192.168.1.140:8084
 ```
 
 ### Windows
@@ -29,7 +29,7 @@ cd "%Temp%"
 #use browser downlaod install.vbs to directory:%Temp%
 #http://192.168.0.26:8080/download/tagent-bootstrap/install.vbs
 
-cscript install.vbs /tenant:develop /pkgurl:http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar /serveraddr:http://192.168.1.140:8084
+cscript install.vbs /tenant:develop /pkgurl:http://192.168.0.26:8080/download/tagent-bootstrap/tagent_linux.tar /serveraddr:http://192.168.1.140:8084 /listenaddr:0.0.0.0 /port:3939
 ```
 
 ## 手动安装
@@ -39,7 +39,7 @@ cscript install.vbs /tenant:develop /pkgurl:http://192.168.0.26:8080/download/ta
 mkdir /opt/tagent
 tar -C /opt/tagent -xvf tagent.tar
 cd /opt/tagent/bin
-./setup.sh --action install --tenant develop --serveraddr http://192.168.1.140:8084
+./setup.sh --action install --listenaddr 0.0.0.0 --port 3939 --tenant develop --serveraddr http://192.168.1.140:8084
 ```
 
 ### Windows
@@ -48,7 +48,7 @@ cd /opt/tagent/bin
 mkdir c:\tagent
 #解压到c:/tagent
 cd c:\tagent
-service-install.bat http://192.168.1.140:8084 develop
+service-install.bat http://192.168.1.140:8084 develop 0.0.0.0 3939
 ```
 
 
