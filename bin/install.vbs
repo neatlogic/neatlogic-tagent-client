@@ -5,6 +5,7 @@ Function usage()
 	Wscript.Echo("Usage:install.vbs /prefix:InstallDirectory /port:ListenPort /pkgurl:PACKAGE_URL /downloaduser:Download_User /downloadpwd:Download_Password /serveraddr:REGISTER_URL /tenant:Tenant")
 	Wscript.Echo("")
 	Wscript.Echo("/prefix: Directory to install, default:/opt/tagent")
+	Wscript.Echo("/listenaddr: Agent listen addr, default:0.0.0.0")
 	Wscript.Echo("/port: Agent listen port, default:3939")
 	Wscript.Echo("/pkgurl: Agent install package download url, support http|https|ftp")
 	Wscript.Echo("/downloaduser: Access download url username, default:none")
@@ -81,6 +82,12 @@ If colArgs.Exists("prefix") Then
 	installPath = colArgs.Item("prefix")
 End If
 
+Dim listenAddr
+listenAddr = "0.0.0.0"
+If colArgs.Exists("listenaddr") Then
+	listenAddr = colArgs.Item("listenaddr")
+End If
+
 Dim port
 port = "3939"
 If colArgs.Exists("port") Then
@@ -144,7 +151,7 @@ Set objShell = Nothing
 wshShell.CurrentDirectory = installPath
 
 Dim errCode
-errCode = wshShell.Run("service-install.bat " & srvAddr & " " & tenant, ,True)
+errCode = wshShell.Run("service-install.bat " & srvAddr & " " & tenant & " " & listenAddr & " " & port, ,True)
 Set wshShell = Nothing
 
 If errCode <> 0 Then

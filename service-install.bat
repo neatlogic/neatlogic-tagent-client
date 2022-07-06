@@ -1,9 +1,19 @@
 echo off
 set SRV_ADDR=%1
 set TENANT=%2
+set LISTEN_ADDR=%3
+set PORT=%4
 
 IF NOT "%TENANT%" == "" (
     "%CD%\Perl\bin\perl" -i.bak -pe "s/tenant=.*/tenant=%TENANT%/g" "%CD%\conf\tagent.conf"
+) 
+
+IF NOT "%LISTEN_ADDR%" == "" (
+    "%CD%\Perl\bin\perl" -i.bak -pe "s/listen.addr=.*/listen.addr=%LISTEN_ADDR%/g" "%CD%\conf\tagent.conf"
+) 
+
+IF NOT "%PORT%" == "" (
+    "%CD%\Perl\bin\perl" -i.bak -pe "s/listen.port=.*/listen.port=%PORT%/g" "%CD%\conf\tagent.conf"
 ) 
 
 IF NOT "%SRV_ADDR%" == "" (

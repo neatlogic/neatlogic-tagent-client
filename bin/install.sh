@@ -39,6 +39,10 @@ parseOpts() {
 				DOWNLOAD_PWD="${!OPTIND}"
 				OPTIND=$(($OPTIND + 1))
 				;;
+			listenaddr)
+				LISTEN_ADDR="${!OPTIND}"
+				OPTIND=$(($OPTIND + 1))
+				;;
 			port)
 				PORT="${!OPTIND}"
 				OPTIND=$(($OPTIND + 1))
@@ -156,7 +160,7 @@ else
 	exit 4
 fi
 
-cd "$INS_DIR/bin" && ./setup.sh --action install --tenant "$TENANT" --serveraddr "$SRV_ADDR" --user "$USER_RUNON" --port "$PORT"
+cd "$INS_DIR/bin" && ./setup.sh --action install --tenant "$TENANT" --serveraddr "$SRV_ADDR" --user "$USER_RUNON" --listenaddr "$LISTEN_ADDR" --port "$PORT"
 
 if [ $? = 0 ]; then
 	echo "INFO: Tagent install success."

@@ -6,6 +6,7 @@ usage() {
         echo ""
         echo "--action: install|uninstall"
         echo "--user: User to run on, default:root"
+        echo '--listenaddr: Agent listen ip, default:0.0.0.0'
         echo "--port: Agent listen port, default:3939"
         echo "--serveraddr: Agent register call back http addr"
         echo "--tenant: System teanant"
@@ -26,6 +27,10 @@ parseOpts() {
                                 ;;
                         runuser)
                                 USER_RUNON="${!OPTIND}"
+                                OPTIND=$(($OPTIND + 1))
+                                ;;
+                        listenaddr)
+                                LISTEN_ADDR="${!OPTIND}"
                                 OPTIND=$(($OPTIND + 1))
                                 ;;
                         port)
@@ -64,6 +69,10 @@ parseOpts "$@"
 
 if [ -z "$USER_RUNON" ]; then
         USER_RUNON="root"
+fi
+
+if [ -z "$LISTEN_ADDR" ]; then
+        LISTEN_ADDR="0.0.0.0"
 fi
 
 if [ -z "$PORT" ]; then
@@ -112,6 +121,7 @@ generate_user_conf() {
                 mkdir $TAGENT_BASE/run/$USER_RUNON/logs
                 mkdir $TAGENT_BASE/run/$USER_RUNON/tmp
                 cp -rf $TAGENT_BASE/conf $TAGENT_BASE/run/$USER_RUNON
+                perl -i -pe "s/listen\.addr=.*/listen.addr=$LISTEN_ADDR/g" $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
                 perl -i -pe "s/listen\.port=.*/listen.port=$PORT/g" $TAGENT_BASE/run/$USER_RUNON/conf/tagent.conf
                 chown -R $USER_RUNON $TAGENT_BASE/run/$USER_RUNON
         fi

@@ -170,7 +170,7 @@ sub new {
 }
 
 sub getVersion {
-    return '1.5.0';
+    return '1.5.1';
 }
 
 sub _getWinScriptExt {
@@ -413,8 +413,9 @@ sub getConnection {
     my $config = $self->{config}->{_};
     my $logger = $self->{logger};
 
-    my $group    = $config->{'proxy.group'};
-    my $tagentId = int( $config->{'tagent.id'} );
+    my $group      = $config->{'proxy.group'};
+    my $tagentId   = int( $config->{'tagent.id'} );
+    my $listenAddr = $config->{'listen.addr'};
 
     my $socket;
 
@@ -442,12 +443,23 @@ sub getConnection {
             foreach my $proxy (@proxyList) {
                 my @address = split( /:/, $proxy );
                 for ( my $i = 1 ; $i < 3 ; $i++ ) {
-                    $socket = IO::Socket::INET->new(
-                        PeerAddr => $address[0],
-                        PeerPort => $address[1],
-                        Proto    => "tcp",
-                        Type     => $socketType
-                    );
+                    if ( defined($listenAddr) and $listenAddr eq '0.0.0.0' ) {
+                        $socket = IO::Socket::INET->new(
+                            PeerAddr => $address[0],
+                            PeerPort => $address[1],
+                            Proto    => "tcp",
+                            Type     => $socketType
+                        );
+                    }
+                    else {
+                        $socket = IO::Socket::INET->new(
+                            LocalAddr => $listenAddr,
+                            PeerAddr  => $address[0],
+                            PeerPort  => $address[1],
+                            Proto     => "tcp",
+                            Type      => $socketType
+                        );
+                    }
 
                     my $_dont_inherit = $self->{_dont_inherit};
                     if ( defined($_dont_inherit) ) {
