@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 usage() {
         pname=$(basename $0)
         echo "Usage:"
