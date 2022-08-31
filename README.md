@@ -8,7 +8,7 @@ Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安�
 自动安装需要在某个可以http或ftp下载的地方放置tagent的安装包
 下面的安装样例脚本中的地址和租户名称需要根据实际情况进行修改
 变量：RUNNER_ADDR 是执行节点的URL，根据网络是否能够连通来选择，只要网络能通，选择任意一个RUNNER效果是相同的。
-tenang租户选择，根据系统安装设置的租户来进行输入。
+tenant租户选择，根据系统安装设置的租户来进行输入。
 
 ### Linux|Unix
 ```shell
