@@ -343,7 +343,7 @@ sub register {
                         eval {
                             my $retval = from_json( $response->{content} );
 
-                            #print( " DEBUG: from_json", $response->{content}, "\n" );
+                            #&$logger( " DEBUG: from_json", $response->{content}, "\n" );
                             if ( "OK" eq $retval->{"Status"} or "SUCCEED" eq $retval->{"Status"} ) {
                                 my @group = ();
                                 my $data  = $retval->{"Data"};
@@ -369,7 +369,7 @@ sub register {
                                 }
 
                                 $registSucceed = 1;
-                                print("INFO: Registry success, tagent id:$tagentId, proxy group:$proxyGroup.\n");
+                                &$logger("INFO: Registry success, tagent id:$tagentId, proxy group:$proxyGroup.\n");
                             }
                             else {
                                 &$logger( "ERROR: Tagent register failed:" . $retval->{'Message'} . "\n" );
@@ -401,7 +401,7 @@ sub register {
         return $newPass;
     }
     else {
-        print("INFO: Registry Address is empty, running in standalone mode.\n");
+        &$logger("INFO: Registry Address is empty, running in standalone mode.\n");
         return;
     }
 }
@@ -796,6 +796,7 @@ sub handleCtlCmd {
                 $self->_execModuleAction( $cmdobj->{moduleName}, $cmdobj->{moduleAction} );
             }
             else {
+                &$logger( 'INFO: command:' . $cmdobj->{type} . " not supported.\n" );
             }
         };
         if ($@) {
