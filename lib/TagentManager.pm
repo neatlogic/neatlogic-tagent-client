@@ -304,15 +304,14 @@ sub register {
 
     if ( defined($registerAddress) and $registerAddress ne '' ) {
         &$logger("INFO: try to register, register address is $registerAddress, tagent:$user:$port\n");
-        my $newPass = $self->randPass();
-        if ( defined($tagentId) and $tagentId ne '' ) {
-            my @passarray = split( /}/, $credential );
-            $newPass = _rc4_decrypt_hex( $self->{MY_KEY}, $passarray[1] );
-        }
 
-        #$postData->{credential} = $newPass;
-        my $authKeyEncrypted = _rc4_encrypt_hex( $self->{MY_KEY}, $newPass );
-        $postData->{credential} = '{ENCRYPTED}' . $authKeyEncrypted;
+        my $authKeyEncrypted;
+        my $newPass;
+        if ( not defined($tagentId) or $tagentId eq '' ) {
+            $newPass                = $self->randPass();
+            $authKeyEncrypted       = '{ENCRYPTED}' . _rc4_encrypt_hex( $self->{MY_KEY}, $newPass );
+            $postData->{credential} = $authKeyEncrypted;
+        }
 
         my $registSucceed = 0;
 
@@ -355,8 +354,11 @@ sub register {
                                     push( @group, $address );
                                 }
                                 my $proxyGroup = join( ',', @group );
-                                $config->{'tagent.id'}  = $tagentId;
-                                $config->{'credential'} = '{ENCRYPTED}' . $authKeyEncrypted;
+                                $config->{'tagent.id'} = $tagentId;
+                                if ( defined($authKeyEncrypted) ) {
+                                    $config->{'credential'} = $authKeyEncrypted;
+                                }
+
                                 if ( scalar(@group) > 0 ) {
                                     $config->{'proxy.group'} = join( ',', @group );
                                 }
@@ -495,6 +497,22 @@ sub getConnection {
         }
     }
     return $socket;
+}
+
+sub _resetCred {
+    my ($self) = @_;
+    my $config = $self->{config}->{_};
+    my $logger = $self->{logger};
+
+    my $newPass          = $self->randPass();
+    my $authKeyEncrypted = '{ENCRYPTED}' . _rc4_encrypt_hex( $self->{MY_KEY}, $newPass );
+
+    $config->{'credential'} = $authKeyEncrypted;
+    if ( not $self->{config}->write( $self->{confFile} ) ) {
+        &$logger("WARN:  Update config file failed $!\n");
+    }
+
+    $self->_reload();
 }
 
 sub _reload {
@@ -727,13 +745,12 @@ sub _updateAppsConf {
 sub _updategroup {
     my ( $self, $cmdobj ) = @_;
     my $config = $self->{config}->{_};
-    my $aaa    = to_json($cmdobj);
+    my $logger = $self->{logger};
     if ( $cmdobj->{'isNew'} eq '1' ) {
         $config->{'proxy.group'} = $cmdobj->{'groupinfo'};
         if ( not $self->{config}->write( $self->{confFile} ) ) {
-            warn("WARN:  Update config file failed $!\n");
+            &$logger("WARN:  Update config file failed $!\n");
         }
-
     }
 }
 
@@ -784,9 +801,13 @@ sub handleCtlCmd {
             if ( $cmdobj->{'type'} eq 'reload' ) {
                 $self->_reload();
             }
-            elsif ( $cmdobj->{'type'} eq 'upgrade' ) {
-                $self->_upgrade();
+            elsif ( $cmdobj->{'type'} eq 'resetcred' ) {
+                $self->_resetCred();
             }
+
+            #elsif ( $cmdobj->{'type'} eq 'upgrade' ) {
+            #    $self->_upgrade();
+            #}
             elsif ( $cmdobj->{'type'} eq 'updateAppsConf' ) {
                 &$logger( 'INFO: update apps conf: ' . $cmdobj->{data} . "\n" );
                 $self->_updateAppsConf( $cmdobj->{data} );
