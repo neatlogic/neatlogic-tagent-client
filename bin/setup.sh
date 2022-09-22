@@ -9,13 +9,10 @@ usage() {
         echo '--listenaddr: Agent listen ip, default:0.0.0.0'
         echo "--port: Agent listen port, default:3939"
         echo "--serveraddr: Agent register call back http addr(Runner http base url)"
-        echo "  Examples:"
-        echo "          http://download.test.com/test/tagent.tar"
-        echo "          ftp://download.test.com/test/tagent.tar"
-        echo "          ssh://download.test.com/test/tagent.tar"
+        echo "  Example: http://192.168.0.88:8084"
         echo "--tenant: System teanant"
         echo ""
-        echo "Example:$pname --user root --port 3939 --tenant develop --serveraddr 'http://192.168.0.88:8084'"
+        echo "Example:$pname --action install --user root --port 3939 --tenant develop --serveraddr 'http://192.168.0.88:8084'"
         exit -1
 }
 

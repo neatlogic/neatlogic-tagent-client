@@ -8,19 +8,16 @@ use warnings;
 
 package TagentManager;
 
-#use Socket;
 use English qw( -no_match_vars );
 use Errno qw(ETIMEDOUT EWOULDBLOCK EINTR);
 use HTTP::Tiny;
 use IO::Socket::INET;
 use IO::Select;
 
-#use JSON::Simple;
 use JSON;
 use TagentClient;
 use Crypt::RC4;
 use Config;
-use Sys::Hostname;
 use File::Basename;
 use POSIX qw(:sys_wait_h WNOHANG setsid uname);
 use Distribution;
@@ -39,7 +36,7 @@ sub randPass {
     my ($self) = @_;
 
     my @chars = ( 'A' .. 'Z', 'a' .. 'z', '0' .. '9' );
-    my $pass;
+    my $pass  = '';
 
     for ( my $i = 0 ; $i < 16 ; $i++ ) {
         $pass = $pass . $chars[ rand @chars ];
@@ -207,7 +204,8 @@ sub register {
 
     my $config     = $self->{config}->{_};
     my $logger     = $self->{logger};
-    my $tagentName = hostname();
+    my $tagentName = `hostname`;
+    $tagentName =~ s/^\s*|\s*$//g;
 
     my @uname     = uname();
     my $osType    = $uname[0];
