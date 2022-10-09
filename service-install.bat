@@ -24,7 +24,7 @@ IF NOT "%SRV_ADDR%" == "" (
 echo on
 
 @REM 请使用管理员运行cmd，运行此脚本进行服务安装
-tssm install Tagent-Server "%CD%\Perl\bin\perl" tagent start
+tssm install Tagent-Server "%CD%\Perl\bin\perl.exe" tagent start
 tssm set Tagent-Server DisplayName "Tagent-Server for automation"
 tssm set Tagent-Server AppDirectory "%CD%\bin"
 tssm set Tagent-Server AppEnvironmentExtra Path="%CD%"\Perl\bin;%%path%% PERLLIB="%CD%"\Perl\lib;"%CD%"\Perl\vender\lib;"%CD%"\Perl\site\lib PERL5LIB="%CD%"\Perl\lib;"%CD%"\Perl\vender\lib;"%CD%"\Perl\site\lib
