@@ -1988,7 +1988,7 @@ sub handleRequest {
             if ( $paramCount > 6 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 0, $request[5], int( $request[6] ) );
             }
-            elsif ( $paramCount == 5 ) {
+            elsif ( $paramCount > 5 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 0, $request[5] );
             }
             else {
@@ -1999,7 +1999,7 @@ sub handleRequest {
             if ( $paramCount > 6 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 1, $request[5], int( $request[6] ) );
             }
-            elsif ( $paramCount == 5 ) {
+            elsif ( $paramCount > 5 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 1, $request[5] );
             }
             else {
