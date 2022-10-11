@@ -918,7 +918,7 @@ sub echo {
 }
 
 sub execCmd {
-    my ( $self, $clientSock, $cmd, $eofStr, $isAsync, $envJson ) = @_;
+    my ( $self, $clientSock, $cmd, $eofStr, $isAsync, $envJson, $execTimeout ) = @_;
 
     my $needTTY = 0;
 
@@ -944,7 +944,9 @@ sub execCmd {
     $cmd =~ s/\$TAGENT_HOME/$ENV{TAGENT_HOME}/g;
     $cmd =~ s/%TAGENT_HOME%/$ENV{TAGENT_HOME}/g;
 
-    my $execTimeout = $self->{execTimeout};
+    if ( not defined($execTimeout) ) {
+        $execTimeout = $self->{execTimeout};
+    }
 
     my $statusCode = 200;
 
@@ -1389,7 +1391,7 @@ sub _readCmdOutLinesToSock {
     else {
         $statusCode = 500;
 
-        $self->_writeChunk( $clientSock, "ERROR: Launch '$cmd' failed: $!", 0 );
+        $self->_writeChunk( $clientSock, "Launch '$cmd' failed: $!", 0 );
     }
 
     return $statusCode;
@@ -1419,7 +1421,7 @@ sub _execCmdAsync {
     if ( defined($pid) and $pid != 0 ) {
         eval { close($in); };
         if ($@) {
-            $self->_writeChunk( $clientSock, "ERROR: Launch asynchronized '$cmd' failed: $!", 0 );
+            $self->_writeChunk( $clientSock, "Launch asynchronized '$cmd' failed: $!", 0 );
         }
         else {
             $self->_writeChunk( $clientSock, undef, 0 );
@@ -1526,7 +1528,7 @@ sub _readFileToSock {
         $statusCode = 500;
 
         #$self->_writeChunk( $clientSock, "Status:$statusCode" );
-        $self->_writeChunk( $clientSock, "ERROR: open file:$filePath failed, $!", 0 );
+        $self->_writeChunk( $clientSock, "open file:$filePath failed, $!", 0 );
     }
 
     return $statusCode;
@@ -1983,7 +1985,10 @@ sub handleRequest {
 
     if ( $statusCode eq 200 ) {
         if ( $reqType eq 'execmd' ) {
-            if ( $paramCount > 5 ) {
+            if ( $paramCount > 6 ) {
+                $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 0, $request[5], int( $request[6] ) );
+            }
+            elsif ( $paramCount == 5 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 0, $request[5] );
             }
             else {
@@ -1991,7 +1996,10 @@ sub handleRequest {
             }
         }
         elsif ( $reqType eq 'execmdasync' ) {
-            if ( $paramCount > 5 ) {
+            if ( $paramCount > 6 ) {
+                $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 1, $request[5], int( $request[6] ) );
+            }
+            elsif ( $paramCount == 5 ) {
                 $statusCode = $self->execCmd( $clientSock, $request[3], $request[4], 1, $request[5] );
             }
             else {

@@ -167,7 +167,7 @@ sub new {
 }
 
 sub getVersion {
-    return '1.5.2';
+    return '1.5.3';
 }
 
 sub _getWinScriptExt {
