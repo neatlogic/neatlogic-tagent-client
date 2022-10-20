@@ -944,7 +944,7 @@ sub execCmd {
     $cmd =~ s/\$TAGENT_HOME/$ENV{TAGENT_HOME}/g;
     $cmd =~ s/%TAGENT_HOME%/$ENV{TAGENT_HOME}/g;
 
-    if ( not defined($execTimeout) ) {
+    if ( not defined($execTimeout) or $execTimeout == 0 ) {
         $execTimeout = $self->{execTimeout};
     }
 

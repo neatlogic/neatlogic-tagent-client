@@ -13,7 +13,7 @@ Getopt::Long::Configure("pass_through");
 sub usage {
     my $pname = $FindBin::Script;
 
-    print("Usage: $pname [-v|--verbose] [-h|--host] <host> -u <user> -p <port> -P <password> [-b|--binary] [-a|--action] [exec|upload|download|writefile|reload] <args ...>\n");
+    print("Usage: $pname [-v|--verbose] [-h|--host] <host> -u <user> -p <port> -P <password> [-b|--binary] [-t|--timeout <timeout seconds>] [-a|--action] [exec|upload|download|writefile|reload] <args ...>\n");
 
     exit(1);
 }
@@ -21,6 +21,7 @@ sub usage {
 sub main {
     my ( $isVerbose, $host, $user, $port, $password, $isBinary, $action, @args ) = @_;
     my $convertCharset = 1;
+    my $timeOut        = 3600;
     $user = 'root';
     $port = 3939;
 
@@ -30,6 +31,7 @@ sub main {
         'p|port=i'     => \$port,
         'P|password=s' => \$password,
         'a|action=s'   => \$action,
+        't|timeout=i'  => \$timeOut,
         'h|host=s'     => \$host,
         'u|user=s'     => \$user,
         '<>'           => sub { my $item = shift(@_); push( @args, $item ); }
@@ -63,7 +65,7 @@ sub main {
     my $status = 0;
     if ( $action eq 'exec' ) {
         my $cmd = join( ' ', @args );
-        $status = $tagent->execCmd( $user, $cmd, $isVerbose );
+        $status = $tagent->execCmd( $user, $cmd, $isVerbose, undef, undef, undef, undef, $timeOut );
     }
     elsif ( $action eq 'upload' ) {
         my $argsLen = scalar(@args);
@@ -100,7 +102,51 @@ sub main {
             print("Example: /home/app/test 'the file content'\n");
             exit(-1);
         }
-        $status = $tagent->writeFile( $user, $args[1], $args[0], $isVerbose, $convertCharset );
+        $status = $tagent->writeFile( $user, $args[1], $args[0], $isVerbose );
+    }
+    elsif ( $action eq 'transfer' ) {
+
+        #user/password@host@xxx/xxx  destDir
+        my $argsLen = scalar(@args);
+        if ( scalar(@args) != 2 ) {
+            print("ERROR: tranfer must has two argument.\n");
+            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test  /tmp\n");
+            exit(-1);
+        }
+
+        my $followLinks = 0;
+        if ( $argsLen > 2 ) {
+            $followLinks = $args[2];
+        }
+
+        my $dest = $args[1];
+        my ( $srcHost, $srcPort, $srcUser, $srcPassword, $src );
+        my ( $userAndPass, $srcDirDef ) = split( '\@', $args[0], 2 );
+        if ( not defined($srcDirDef) ) {
+            print("ERROR: Invalid parameter $args[0]\n");
+            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n");
+            exit(-1);
+        }
+
+        ( $srcUser, $srcPassword ) = split( '/', $userAndPass, 2 );
+
+        if ( $srcDirDef =~ /^([^:]+):(\d+):(.*)$/ ) {
+            $srcUser = $1;
+            $srcPort = $2;
+            $src     = $3;
+        }
+        elsif ( $srcDirDef =~ /^([^:]+):(.*)$/ ) {
+            $srcUser = $1;
+            $srcPort = 3939;
+            $src     = $3;
+        }
+        else {
+            print("ERROR: Invalid parameter $args[0]\n");
+            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n");
+            exit(-1);
+        }
+
+        $status = $tagent->transFile( $srcHost, $srcPort, $srcUser, $srcPassword, $destUser, $src, $dest, $isVerbose, $followLinks );
     }
     elsif ( $action eq 'reload' ) {
         $status = $tagent->reload();

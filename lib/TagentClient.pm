@@ -11,6 +11,7 @@ package TagentClient;
 use Socket;
 use Encode;
 use POSIX;
+use JSON;
 use IO::Socket::INET;
 use IO::Select;
 use File::Basename;
@@ -555,7 +556,7 @@ sub _writeChunk {
 
 #执行远程命令
 sub execCmd {
-    my ( $self, $user, $cmd, $isVerbose, $eofStr, $callback, @cbparams ) = @_;
+    my ( $self, $user, $cmd, $isVerbose, $eofStr, $callback, @cbparams, $env, $execTimeout ) = @_;
     $cmd =~ s/^\s+//;
     $cmd =~ s/\s*$//;
 
@@ -573,22 +574,34 @@ sub execCmd {
     $eofStr =~ s/^\s+//;
     $eofStr =~ s/\s*$//;
 
+    my $envJson = '';
+    if ( defined($env) ) {
+        $envJson = to_json($env);
+    }
+
+    my $rexecTimeout = $self->{execTimeout};
+    if ( defined($execTimeout) and $execTimeout > 0 ) {
+        $rexecTimeout = $execTimeout;
+    }
+
     my $socket = $self->getConnection($isVerbose);
 
-    my $agentCharset  = $self->{agentCharset};
-    my $charset       = $self->{charset};
-    my $cmdEncoded    = $cmd;
-    my $eofStrEncoded = $eofStr;
-    my $userEncoded   = $user;
+    my $agentCharset   = $self->{agentCharset};
+    my $charset        = $self->{charset};
+    my $cmdEncoded     = $cmd;
+    my $eofStrEncoded  = $eofStr;
+    my $userEncoded    = $user;
+    my $envJsonEncoded = $envJson;
 
     if ( $charset ne $agentCharset ) {
-        $cmdEncoded    = Encode::encode( $agentCharset, Encode::decode( $charset, $cmd ) );
-        $eofStrEncoded = Encode::encode( $agentCharset, Encode::decode( $charset, $eofStr ) );
-        $userEncoded   = Encode::encode( $agentCharset, Encode::decode( $charset, $user ) );
+        $cmdEncoded     = Encode::encode( $agentCharset, Encode::decode( $charset, $cmd ) );
+        $eofStrEncoded  = Encode::encode( $agentCharset, Encode::decode( $charset, $eofStr ) );
+        $userEncoded    = Encode::encode( $agentCharset, Encode::decode( $charset, $user ) );
+        $envJsonEncoded = Encode::encode( $agentCharset, Encode::decode( $charset, $envJson ) );
     }
 
     #相比老版本，因为用了chunk协议，所以请求里的dataLen就不需要了
-    $self->_writeChunk( $socket, "$userEncoded|execmd|$agentCharset|" . unpack( 'H*', $cmdEncoded ) . '|' . unpack( 'H*', $eofStrEncoded ) );
+    $self->_writeChunk( $socket, "$userEncoded|execmd|$agentCharset|" . unpack( 'H*', $cmdEncoded ) . '|' . unpack( 'H*', $eofStrEncoded ) . '|' . unpack( 'H*', $envJsonEncoded ) . '|' . unpack( 'H*', "$rexecTimeout" ) );
 
     my $status = 0;
 
@@ -1537,6 +1550,154 @@ sub upload {
     }
 
     close($socket);
+    return $status;
+}
+
+# 把某个机器的文件或目录传送到另外机器或目录
+sub transFile {
+    my ( $self, $srcHost, $srcPort, $srcUser, $srcPassword, $destUser, $src, $dest, $isVerbose, $followLinks ) = @_;
+    $src  =~ s/[\/\\]+/\//g;
+    $dest =~ s/[\/\\]+/\//g;
+
+    $src =~ s/^\s+//;
+    $src =~ s/\s*$//;
+
+    $dest =~ s/^\s+//;
+    $dest =~ s/\s*$//;
+
+    if ( not defined($srcUser) ) {
+        $srcUser = 'none';
+    }
+    if ( not defined($destUser) ) {
+        $destUser = $srcUser;
+    }
+
+    if ( defined($isVerbose) and $isVerbose != 0 ) {
+        $isVerbose = 1;
+    }
+    else {
+        $isVerbose = 0;
+    }
+
+    if ( defined($followLinks) ) {
+        $followLinks = 1;
+    }
+    else {
+        $followLinks = 0;
+    }
+
+    my $charset = $self->{charset};
+
+    my $srcSocket    = $self->getConnection( $isVerbose, $srcHost, $srcPort, $srcUser, $srcPassword );
+    my $agentCharset = $self->{agentCharset};
+    my $srcEncoded   = $src;
+    my $userEncoded  = $srcUser;
+
+    if ( $charset ne $agentCharset ) {
+        $srcEncoded  = Encode::encode( $agentCharset, Encode::decode( $charset, $src ) );
+        $userEncoded = Encode::encode( $agentCharset, Encode::decode( $charset, $srcUser ) );
+    }
+
+    $self->_writeChunk( $srcSocket, "$userEncoded|download|$agentCharset|" . unpack( 'H*', $srcEncoded ) . '|' . unpack( 'H*', $followLinks ) );
+
+    my $statusLine;
+    eval { $statusLine = $self->_readChunk($srcSocket); };
+    if ($@) {
+        $statusLine = $@;
+        $statusLine =~ s/\sat\s+.*$//;
+    }
+
+    my $destHost = $self->{host};
+    my $status   = 0;
+    my $fileType = 'file';
+    if ( $statusLine =~ /^Status:200,FileType:(\w+)/ ) {
+        $fileType = $1;
+        if ( $isVerbose == 1 ) {
+            print("INFO: Download $fileType $srcUser\@$srcHost:$src begin...\n");
+        }
+        $status = 0;
+    }
+    else {
+        $status = -1;
+        if ( $charset ne $agentCharset ) {
+            $statusLine = Encode::encode( $charset, Encode::decode( $agentCharset, $statusLine ) );
+        }
+        print("ERROR: Downlaod $fileType $srcUser\@$srcHost:$src failed, $statusLine.\n");
+        close($srcSocket);
+        return $status;
+    }
+
+    my $destSocket = $self->getConnection($isVerbose);
+    $agentCharset = $self->{agentCharset};
+    $srcEncoded   = $src;
+    $userEncoded  = $destUser;
+    my $destEncoded = $dest;
+
+    if ( $charset ne $agentCharset ) {
+        $srcEncoded  = Encode::encode( $agentCharset, Encode::decode( $charset, $src ) );
+        $destEncoded = Encode::encode( $agentCharset, Encode::decode( $charset, $dest ) );
+        $userEncoded = Encode::encode( $agentCharset, Encode::decode( $charset, $destUser ) );
+    }
+
+    my $param = unpack( 'H*', $fileType ) . '|' . unpack( 'H*', $srcEncoded ) . '|' . unpack( 'H*', $destEncoded ) . '|' . unpack( 'H*', $followLinks );
+
+    $self->_writeChunk( $destSocket, "$userEncoded|upload|$agentCharset|$param" );
+
+    my $preStatus;
+    eval { $preStatus = $self->_readChunk($destSocket); };
+    if ($@) {
+        $preStatus = $@;
+        $preStatus =~ s/\sat\s+.*$//;
+    }
+
+    if ( $preStatus !~ /^\s*Status:200/ ) {
+        close($destSocket);
+        print("ERROR: Upload to $destUser\@$destHost:$dest failed, $preStatus.\n");
+        return -1;
+    }
+
+    if ( $isVerbose == 1 ) {
+        print("INFO: Transer $fileType $srcUser\@$srcHost:$src to $destUser\@$destHost:$dest begin...\n");
+    }
+
+    $status = 0;
+    my $chunk;
+    do {
+        eval { $chunk = $self->_readChunk($srcSocket); };
+        if ( defined($@) ) {
+            $status = -1;
+            my $errMsg = $@;
+            $errMsg =~ s/\sat\s.*$//;
+            print("ERROR: $errMsg");
+            $self->_writeChunk( $destSocket, 'upload failed', 0 );
+        }
+        else {
+            if ( defined($chunk) ) {
+                eval { $self->_writeChunk( $destSocket, $chunk ); };
+                if ($@) {
+                    $status = -1;
+                    my $errMsg = $@;
+                    $errMsg =~ s/\sat\s.*$//;
+                    print("ERROR: $errMsg");
+                    last;
+                }
+            }
+        }
+    } while ( defined($chunk) );
+
+    #get the error Message, if no errMsg, succeed.
+    #my $errMsg = $self->_readChunk($socket);
+
+    if ( $isVerbose == 1 ) {
+        if ( $status == 0 ) {
+            print("INFO: Transfer $src to $dest succeed.\n");
+        }
+        else {
+            print("ERROR: Transfer $src to $dest failed.\n");
+        }
+    }
+
+    close($srcSocket);
     return $status;
 }
 

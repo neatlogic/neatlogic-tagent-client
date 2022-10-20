@@ -2,6 +2,7 @@
 import os
 import argparse
 import getpass
+import re
 import TagentClient
 
 
@@ -81,6 +82,50 @@ if __name__ == "__main__":
             print("Example: /home/app/test 'the file content'\n")
             exit(-1)
         status = tagent.writeFile(user, restArgs[1], restArgs[0], isVerbose, convertCharset)
+    elif action == 'transfer':
+        argsLen = len(restArgs)
+        if argsLen != 2:
+            print("ERROR: tranfer must has two argument.\n")
+            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test  /tmp\n")
+            exit(-1)
+
+        followLinks = 0
+        if argsLen > 2:
+            followLinks = restArgs[1]
+
+        dest = restArgs[1]
+        srcHost = None
+        srcPort = 3939
+        srcUser = 'root'
+        srcPasswd = ''
+        src = ''
+        (userAndPass, srcDirDef) = restArgs[0].split('@', 1)
+
+        if srcDirDef is None:
+            print("ERROR: Invalid parameter $args[0]\n")
+            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n")
+            exit(-1)
+
+        (srcUser, srcPassword) = userAndPass.split('/', 1)
+
+        match = re.match('^([^:]+):(\\d+):(.*)$', srcDirDef)
+
+        if match:
+            srcUser = match.group(1)
+            srcPort = match.group(2)
+            src = match.group(3)
+        else:
+            match = re.match('^([^:]+):(.*)$', srcDirDef)
+            if match:
+                srcUser = match.group(1)
+                src = match.group(3)
+            else:
+                print("ERROR: Invalid parameter $args[0]\n")
+                print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n")
+                exit(-1)
+
+        status = tagent.transFile(srcHost, srcPort, srcUser, srcPassword, user, src, dest, isVerbose, followLinks)
+
     elif action == 'reload':
         status = tagent.reload()
 
