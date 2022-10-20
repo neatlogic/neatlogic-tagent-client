@@ -1722,7 +1722,9 @@ sub upload {
                         if ( defined($chunk) ) {
                             $wrtLen = syswrite( $chldIn, $chunk );
                             if ( not defined($wrtLen) ) {
-                                die($!);
+                                if ( $chunk !~ /^\x0+$/ ) {
+                                    die($!);
+                                }
                             }
                         }
                         else {
