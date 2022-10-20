@@ -622,7 +622,7 @@ class TagentClient:
 
     def __readCmdOutToSock(self, sock, cmd, isVerbose=0, cwd=None):
         status = 0
-        buf_size = 4096 * 8
+        buf_size = 4096 * 2
         try:
             if cwd is None:
                 p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
