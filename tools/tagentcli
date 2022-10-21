@@ -110,7 +110,7 @@ sub main {
         my $argsLen = scalar(@args);
         if ( scalar(@args) != 2 ) {
             print("ERROR: tranfer must has two argument.\n");
-            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test  /tmp\n");
+            print("Example: myuser/mypassword\@192.168.0.100:3939:/tmp/test  /tmp\n");
             exit(-1);
         }
 
@@ -120,33 +120,34 @@ sub main {
         }
 
         my $dest = $args[1];
+
         my ( $srcHost, $srcPort, $srcUser, $srcPassword, $src );
         my ( $userAndPass, $srcDirDef ) = split( '\@', $args[0], 2 );
         if ( not defined($srcDirDef) ) {
             print("ERROR: Invalid parameter $args[0]\n");
-            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n");
+            print("Example: myuser/mypassword\@192.168.0.100:3939:/tmp/test\n");
             exit(-1);
         }
 
         ( $srcUser, $srcPassword ) = split( '/', $userAndPass, 2 );
 
         if ( $srcDirDef =~ /^([^:]+):(\d+):(.*)$/ ) {
-            $srcUser = $1;
+            $srcHost = $1;
             $srcPort = $2;
             $src     = $3;
         }
         elsif ( $srcDirDef =~ /^([^:]+):(.*)$/ ) {
-            $srcUser = $1;
+            $srcHost = $1;
             $srcPort = 3939;
-            $src     = $3;
+            $src     = $2;
         }
         else {
             print("ERROR: Invalid parameter $args[0]\n");
-            print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n");
+            print("Example: myuser/mypassword\@192.168.0.100:3939:/tmp/test\n");
             exit(-1);
         }
 
-        $status = $tagent->transFile( $srcHost, $srcPort, $srcUser, $srcPassword, $destUser, $src, $dest, $isVerbose, $followLinks );
+        $status = $tagent->transFile( $srcHost, $srcPort, $srcUser, $srcPassword, $user, $src, $dest, $isVerbose, $followLinks );
     }
     elsif ( $action eq 'reload' ) {
         $status = $tagent->reload();

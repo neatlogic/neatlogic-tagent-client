@@ -1647,7 +1647,7 @@ sub upload {
                         if ( defined($chunk) ) {
                             $wrtLen = syswrite( $fh, $chunk );
                             if ( not defined($wrtLen) ) {
-                                die($!);
+                                die("Write data to file $filePath failed, $!");
                             }
                         }
                     } while ( defined($chunk) );
@@ -1700,7 +1700,7 @@ sub upload {
         }
 
         elsif ( chdir($filePath) ) {
-            my $cmd = "unalias tar >/dev/null 2>\&1; tar x${followLinksOpt}f - 1>/dev/null";
+            my $cmd = "unalias tar >/dev/null 2>\&1; tar xiB${followLinksOpt}f - 1>/dev/null";
             if ( $self->{ostype} eq 'windows' ) {
                 $cmd = "7z.exe x -aoa -y -si -ttar 1>nul";
             }
@@ -1722,8 +1722,8 @@ sub upload {
                         if ( defined($chunk) ) {
                             $wrtLen = syswrite( $chldIn, $chunk );
                             if ( not defined($wrtLen) ) {
-                                if ( $chunk !~ /^\x0+$/ ) {
-                                    die($!);
+                                if ( $chunk !~ /^\x0*$/ ) {
+                                    die("Untar data to dir $filePath failed, $!");
                                 }
                             }
                         }

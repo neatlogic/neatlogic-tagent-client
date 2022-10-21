@@ -31,7 +31,7 @@ if __name__ == "__main__":
     action = args.action
     user = args.user
 
-    if not host or not port or action not in ('exec', 'upload', 'download', 'writefile', 'reload'):
+    if not host or not port or action not in ('exec', 'upload', 'download', 'writefile', 'reload', 'transfer'):
         usage()
 
     convertCharset = 1
@@ -111,20 +111,20 @@ if __name__ == "__main__":
         match = re.match('^([^:]+):(\\d+):(.*)$', srcDirDef)
 
         if match:
-            srcUser = match.group(1)
+            srcHost = match.group(1)
             srcPort = match.group(2)
             src = match.group(3)
         else:
             match = re.match('^([^:]+):(.*)$', srcDirDef)
             if match:
-                srcUser = match.group(1)
-                src = match.group(3)
+                srcHost = match.group(1)
+                src = match.group(2)
             else:
                 print("ERROR: Invalid parameter $args[0]\n")
                 print("Example: myuser/mypassword@192.168.0.100:3939:/tmp/test\n")
                 exit(-1)
 
-        status = tagent.transFile(srcHost, srcPort, srcUser, srcPassword, user, src, dest, isVerbose, followLinks)
+        status = tagent.transFile(srcHost, srcPort, srcUser, srcPassword, src, user, dest, isVerbose, followLinks)
 
     elif action == 'reload':
         status = tagent.reload()
