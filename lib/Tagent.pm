@@ -1722,7 +1722,7 @@ sub upload {
                         if ( defined($chunk) ) {
                             $wrtLen = syswrite( $chldIn, $chunk );
                             if ( not defined($wrtLen) ) {
-                                if ( $chunk !~ /^\x0*$/ ) {
+                                if ( $chunk !~ /^\x00*$/ ) {
                                     die("Untar data to dir $filePath failed, $!");
                                 }
                             }
