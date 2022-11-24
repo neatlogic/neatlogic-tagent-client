@@ -338,10 +338,11 @@ sub register {
                     );
                     if ( $response->{status} == 200 ) {
                         eval {
-                            my $retval = from_json( $response->{content} );
+                            my $retval    = from_json( $response->{content} );
+                            my $regStatus = $retval->{"Status"};
 
                             #&$logger( " DEBUG: from_json", $response->{content}, "\n" );
-                            if ( "OK" eq $retval->{"Status"} or "SUCCEED" eq $retval->{"Status"} ) {
+                            if ( defined($regStatus) and ( $regStatus eq "OK" or $regStatus eq "SUCCEED" ) ) {
                                 my @group = ();
                                 my $data  = $retval->{"Data"};
                                 $tagentId = $data->{"tagentId"};
