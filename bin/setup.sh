@@ -5,14 +5,14 @@ usage() {
         echo "$pname --action {install|uninstall} --runuser USER_RunON --port ListenPort --registerurl REGISTER_URL --tenant Tenant"
         echo ""
         echo "--action: install|uninstall"
-        echo "--user: User to run on, default:root"
+        echo "--runuser: User to run on, default:root"
         echo '--listenaddr: Agent listen ip, default:0.0.0.0'
         echo "--port: Agent listen port, default:3939"
         echo "--serveraddr: Agent register call back http addr(Runner http base url)"
         echo "  Example: http://192.168.0.88:8084"
         echo "--tenant: System teanant"
         echo ""
-        echo "Example:$pname --action install --user root --port 3939 --tenant develop --serveraddr 'http://192.168.0.88:8084'"
+        echo "Example:$pname --action install --runuser root --port 3939 --tenant develop --serveraddr 'http://192.168.0.88:8084'"
         exit -1
 }
 

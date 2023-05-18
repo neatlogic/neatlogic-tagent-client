@@ -5,7 +5,7 @@ usage() {
 	echo "$pname --prefix InstallDirectory --runuser USER_RunON --port ListenPort --pkgurl PACKAGE_URL --downloaduser Download_User --downloadpwd Download_Password --registerurl REGISTER_URL"
 	echo ""
 	echo "--prefix: Directory to install, default:/opt/tagent"
-	echo "--user: User to run on, default:root"
+	echo "--runuser: User to run on, default:root"
 	echo "--listenaddr: Agent listen addr, default:0.0.0.0"
 	echo "--port: Agent listen port, default:3939"
 	echo "--pkgurl: Agent install package download url, support http|https|ftp|ssh"
@@ -19,7 +19,7 @@ usage() {
 	echo "  Example: http://192.168.0.88:8084"
 	echo "--tenant: System tenant"
 	echo ""
-	echo "Example:$pname --user root --port 3939 --tenant develop --pkgurl http://abc.com/service/tagent.tar --serveraddr 'http://192.168.0.88:8084'"
+	echo "Example:$pname --runuser root --port 3939 --tenant develop --pkgurl http://abc.com/service/tagent.tar --serveraddr 'http://192.168.0.88:8084'"
 	exit -1
 }
 

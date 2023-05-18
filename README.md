@@ -24,7 +24,7 @@ bash install.sh --listenaddr 0.0.0.0 --port 3939 --tenant develop --pkgurl $RUNN
 RUNNER_ADDR=http://10.68.10.60:8084
 cd /tmp
 curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
-bash install.sh --user app --listenaddr 0.0.0.0 --port 2020 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
+bash install.sh --runuser app --listenaddr 0.0.0.0 --port 2020 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
 ```
 
 ### Windows
