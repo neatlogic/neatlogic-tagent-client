@@ -1,4 +1,4 @@
-中文 / [English](README.en.md)
+[中文](README.md) / English
 <p align="left">
     <a href="https://opensource.org/licenses/Apache-2.0" alt="License">
         <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" /></a>
@@ -8,30 +8,34 @@
 
 ---
 
-## 关于
+## About
 
-Tagent用于部署在客户端，实现ssh等无法完成的复杂操作。
+Tagent is used for deployment on the client side, accomplishing complex operations that ssh and others cannot complete.
 
-## Tagent使用说明
+## Tagent User Guide
 
-### 安装包
+### Installation Packages
 
-Linux｜Unix安装包：tagent_linux.tar
-Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安装包内嵌了Perl运行时和7z工具）
+Linux｜Unix installation package: tagent_linux.tar
+Windows installation package: tagent_windows_x32.tar, tagent_windows_x64.tar (Windows installation package includes Perl
+runtime and 7z tool)
 
-### 自动安装
+### Automatic Installation
 
-#### 获取子目录bin下的install.sh或者install.vbs(Windows)
+#### Get install.sh or install.vbs(Windows) from the subdirectory bin
 
-自动安装需要在某个可以http或ftp下载的地方放置tagent的安装包
-下面的安装样例脚本中的地址和租户名称需要根据实际情况进行修改
-变量：RUNNER_ADDR 是执行节点的URL，根据网络是否能够连通来选择，只要网络能通，选择任意一个RUNNER效果是相同的。
-tenant租户选择，根据系统安装设置的租户来进行输入。
+Automatic installation requires placing the Tagent installation package somewhere that can be downloaded via HTTP or
+FTP.
+The address and tenant name in the following installation sample scripts need to be modified according to actual
+conditions.
+Variable: RUNNER_ADDR is the URL of the execution node, choose based on whether the network can be connected. As long as
+the network is accessible, choosing any RUNNER will have the same effect.
+Tenant selection, input according to the tenant set by the system installation.
 
 #### Linux|Unix
 
 ```shell
-#Linux安装，以root用户运行
+#Linux installation, run as root user
 RUNNER_ADDR=http://10.68.10.60:8084
 cd /tmp
 curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
@@ -39,7 +43,7 @@ bash install.sh --listenaddr 0.0.0.0 --port 3939 --tenant develop --pkgurl $RUNN
 ```
 
 ```shell
-#Linux安装，以app用户运行，监听2020端口
+#Linux installation, run as app user, listening on port 2020
 RUNNER_ADDR=http://10.68.10.60:8084
 cd /tmp
 curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
@@ -51,39 +55,41 @@ bash install.sh --runuser app --listenaddr 0.0.0.0 --port 2020 --tenant develop 
 ```shell
 #Open cmd.exec in Administrator mode
 cd "%Temp%"
-#use browser downlaod install.vbs to directory:%Temp%
+#use browser to download install.vbs to directory:%Temp%
 #http://192.168.0.26:8080/download/tagent-bootstrap/install.vbs
 set RUNNER_ADDR=http://10.68.10.60:8084
 cscript install.vbs /tenant:develop /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/download/tagent_windows_x64.tar /serveraddr:%RUNNER_ADDR% /listenaddr:0.0.0.0 /port:3939
 ```
 
-### 手动安装
+### Manual Installation
 
 #### Linux|Unix
 
-上传安装包到服务器，解压到/opt/tagent
+Upload the installation package to the server and unzip it to /opt/tagent
 
 ```shell
 RUNNER_ADDR=http://10.68.10.60:8084
 mkdir /opt/tagent
 tar -C /opt/tagent -xvf tagent.tar
 cd /opt/tagent/bin
-./setup.sh --action install --listenaddr 0.0.0.0 --port 3939 --tenant develop --serveraddr $RUNNER_ADDR
+./setup.sh --action install --listenaddr 0.0.0.0 --port 3939 --tenant develop --server
+
+addr $RUNNER_ADDR
 ```
 
 #### Windows
 
-上传安装包到服务器，解压到c:/tagent
+Upload the installation package to the server and unzip it to c:/tagent
 
 ```shell
 set RUNNER_ADDR=http://10.68.10.60:8084
 mkdir c:\tagent
-#解压到c:/tagent
+#unzip to c:/tagent
 cd c:\tagent
 service-install.bat %RUNNER_ADDR% develop 0.0.0.0 3939
 ```
 
-### 手动卸载
+### Manual Uninstallation
 
 #### Linux|Unix
 
