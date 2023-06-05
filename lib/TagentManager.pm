@@ -73,34 +73,73 @@ sub collectIp {
     my @uname    = uname();
     my $osType   = $uname[0];
     my $ipString = "";
-    my @ipList;
-    if ( $osType =~ /Windows/i ) {
-        @ipList = `ipconfig /all | findstr "IP"`;
-    }
-    else {
-        @ipList = `ifconfig -a 2>/dev/null`;
-        if ( $? != 0 ) {
-            @ipList = `ip addr 2>/dev/null`;
-        }
-    }
-
+    my @nicInfoList;
     my $allIps = {};
-    foreach (@ipList) {
-        my $ip = $_;
-        if ( $ip =~ /(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/ ) {
-            if ( $1 > 0 and $1 < 255 and $2 >= 0 and $2 <= 255 and $3 >= 0 and $3 <= 255 and $4 >= 0 and $4 < 255 ) {
-                my $realIp = "$1.$2.$3.$4";
-                if ( not defined( $allIps->{$realIp} ) ) {
-                    if ( $realIp ne '127.0.0.1' ) {
-                        $ipString = $ipString . $realIp . ',';
+    if ( $osType =~ /Windows/i ) {
+        @nicInfoList = `ipconfig /all | findstr "IP"`;
+        foreach (@nicInfoList) {
+            my $ip = $_;
+            if ( $ip =~ /(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/ ) {
+                if ( $1 > 0 and $1 < 255 and $2 >= 0 and $2 <= 255 and $3 >= 0 and $3 <= 255 and $4 >= 0 and $4 < 255 ) {
+                    my $realIp = "$1.$2.$3.$4";
+                    if ( not defined( $allIps->{$realIp} ) ) {
+                        if ( $realIp ne '127.0.0.1' ) {
+                            $ipString = $ipString . $realIp . ',';
+                        }
+                        $allIps->{$realIp} = 1;
                     }
-                    $allIps->{$realIp} = 1;
                 }
             }
         }
+        $ipString = substr( $ipString, 0, rindex( $ipString, ',' ) );
     }
-    $ipString = substr( $ipString, 0, rindex( $ipString, ',' ) );
+    else {
+        @nicInfoList = `ip addr`;
+        my $nicInfoCount = scalar(@nicInfoList);
+        for ( my $i = 0 ; $i < $nicInfoCount ; $i++ ) {
+            my $line = $nicInfoList[$i];
+            my ( $ethName, $ipAddr );
+            my $IS_VIRTUAL = 0;
+            if ( $line =~ /^\d+:\s+(\S+):/ ) {
+                $ethName = $1;
+                if ( $ethName =~ /@/ ) {
+                    $ethName = substr( $ethName, 0, index( $ethName, '@' ) );
+                }
+                if ( -e "/sys/class/net/$ethName" and not -e "/sys/class/net/$ethName/device" ) {
+                    $IS_VIRTUAL = 1;
+                }
 
+                $i    = $i + 1;
+                $line = $nicInfoList[$i];
+                while ( $i < $nicInfoCount and $line !~ /^\d+:\s+(\S+):/ ) {
+                    if ( $line =~ /^\s*inet\s(\d+\.\d+\.\d+\.\d+)/ ) {
+                        $ipAddr = $1;
+                    }
+                    $i    = $i + 1;
+                    $line = $nicInfoList[$i];
+                }
+
+                if ( $ethName =~ /^lo/i or $ipAddr =~ /^127/ or $ipAddr =~ '^::1' or $IS_VIRTUAL == 1 ) {
+                    $i = $i - 1;
+                    next;
+                }
+
+                if ( $ipAddr =~ /(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/ ) {
+                    if ( $1 > 0 and $1 < 255 and $2 >= 0 and $2 <= 255 and $3 >= 0 and $3 <= 255 and $4 >= 0 and $4 < 255 ) {
+                        my $realIp = "$1.$2.$3.$4";
+                        if ( not defined( $allIps->{$realIp} ) ) {
+                            if ( $realIp ne '127.0.0.1' ) {
+                                $ipString = $ipString . $realIp . ',';
+                            }
+                            $allIps->{$realIp} = 1;
+                        }
+                    }
+                }
+                $i = $i - 1;
+            }
+        }
+        $ipString = substr( $ipString, 0, rindex( $ipString, ',' ) );
+    }
     return $ipString;
 }
 
