@@ -80,8 +80,8 @@ sub collectIp {
         $cmdStatus   = 0;
     }
     else {
-        @nicInfoList = `ip addr 2>/dev/nul`;
-        if ( $? != 0 ) {
+        @nicInfoList = `ip addr 2>/dev/null`;
+        if ( $? > 0 ) {
             $cmdStatus   = 0;
             @nicInfoList = `ifconfig -a`;
         }
