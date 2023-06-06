@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ksh
 usage() {
         pname=$(basename $0)
         echo "Usage:"
@@ -67,7 +67,6 @@ parseOpts() {
 }
 
 parseOpts "$@"
-echo "USER_RUNON:$USER_RUNON,action:$ACTION,listenaddr:$LISTEN_ADDR,port:$PORT,serveraddr:$SRV_ADDR,tenant:$TENANT \n"
 
 if [ -z "$USER_RUNON" ]; then
         USER_RUNON="root"
