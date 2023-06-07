@@ -8,96 +8,172 @@
 
 ---
 
-## 关于
+## 关于Neatlogic-Tagent
+Neatlogic-Tagent用于部署在受管目标操作系统上，平滑替代主机连接协议一种可选方式，Tagent具备以下几点特点：
+<ol>
+<li>采用perl语言开发，运行环境依赖要求极低。</li>
+<li>支持常见的Windows、Linux、SUSE、Aix等操作系统。</li>
+<li>对操作系统资源极少，资源范围为：cpu <= 2%,内存：<= 200MB。</li>
+<li>同一受管机器，支持多用户安装。</li>
+<li>与<a href="/neatlogic-runner">Neatlogic-runner</a>建立心跳连接，定期探测目标环境和服务可用性。</li>
+<li>支持从<a href="/neatlogic-runner">Neatlogic-runner</a>注册、管理、以及自动化匹配管理网段下发执行。</li>
+<li>支持在<a href="/neatlogic-web">Neatlogic-web</a>上查看日志、重启、修改配置、升级等操作。</li>
+</ol>
 
-Tagent用于部署在客户端，实现ssh等无法完成的复杂操作。
+## 适用于场景 
+Neatlogic-Tagent常见几种适用场景：
+<ol>
+<li>Windows类机器。</li>
+<li>机器账号密码经常变更。</li>
+<li>机器上多账号，不想在平台上维护不同用户密码。</li>
+<li>深度使用自动化运维，如：资源安装交付。</li>
+</ol>
 
-## Tagent使用说明
+## 如何获取安装包 
+Neatlogic-Tagent两种获取安装包：
+* 基于<a href="/neatlogic-tagent-client">Neatlogic-tagent-client</a>工程打包。
+```
+说明：windows安装包内嵌了Perl运行时依赖环境和7z工具，详见下面安装包内差异。
+```
 
-### 安装包
+* 从<a href="/neatlogic-runner">Neatlogic-runner</a>获取安装包
+```bash
+#####安装包说明############
+#Neatlogic-runner 自带3个安装包
+#Unix类：tagent.tar
+#Windows 32类：tagent_windows_x32.zip
+#Windows 64类：tagent_windows_x64.zip
+##########################
+#eg:获取Unix安装包
+#格式: http://Neatlogic-runner机器IP:8084/autoexecrunner/tagent/download/tagent.tar
+# 示例
+curl tagent.tar http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent.tar
 
-Linux｜Unix安装包：tagent_linux.tar
-Windows安装包：tagent_windows_x32.tar、tagent_windows_x64.tar（windows安装包内嵌了Perl运行时和7z工具）
+#eg: 获取Windows 64位安装包
+# 示例
+curl tagent_windows_x64.zip http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent_windows_x64.zip
+```
+
+## 如何安装 
+* Unix类操作系统建议以root用户安装，root安装的Agent会注册服务。
+* Windows操作系统需以管理方式打开cmd窗口进行安装。
+### 手动安装
+
+* Linux | SUSE | Aix |Unix 类安装 
+```bash 
+# 登录目标受管机器，下载安装包,建议统一存放/opt目录
+cd /opt
+curl tagent.tar http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent.tar
+
+# 解压
+tar -xvf tagent.tar
+
+# 查看shell类型
+echo $0 #aix操作系统需注意,大多数默认是ksh
+
+# 执行安装
+# 参数说明：--serveraddr neatlogic-runner的访问地址  --tenant 租户名称
+# shell类型是bash，示例
+sh tagent/bin/setup.sh --action install --serveraddr http://192.168.0.10:8084  --tenant demo
+
+# shell类型是ksh，示例
+sh tagent/bin/setup.ksh --action install --serveraddr http://192.168.0.10:8084  --tenant demo
+
+# 安装完检查 (3个进程)
+ps -ef |grep tagent 
+
+# 查看日志
+less tagent/run/root/logs/tagent.log 
+# 查看配置 
+less tagent/run/root/conf/tagent.conf
+
+#启停
+service tagent start/stop 
+```
+
+* Windows类型安装
+<ol>
+<li>查看Windows操作是多少位OS，选择对应安装包。</li>
+<li>登录目标受管机器，下载安装包并拷贝到c盘,建议统一存放c盘根目录。</li>
+<li>以管理员权限打开cmd窗口，并切换到c盘目录</li>
+<li>cd tagent_windows_x64目录，执行：service-install.bat</li>
+</ol>
+
+完整示例：
+```bat
+cd c:\tagent_windows_x64
+service-install.bat
+rd /s /q c:\tagent_windows_x64
+```
 
 ### 自动安装
 
-#### 获取子目录bin下的install.sh或者install.vbs(Windows)
-
-自动安装需要在某个可以http或ftp下载的地方放置tagent的安装包
-下面的安装样例脚本中的地址和租户名称需要根据实际情况进行修改
-变量：RUNNER_ADDR 是执行节点的URL，根据网络是否能够连通来选择，只要网络能通，选择任意一个RUNNER效果是相同的。
-tenant租户选择，根据系统安装设置的租户来进行输入。
-
-#### Linux|Unix
+* Linux | SUSE | Aix |Unix 类安装示例
 
 ```shell
-#Linux安装，以root用户运行
-RUNNER_ADDR=http://10.68.10.60:8084
-cd /tmp
-curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
-bash install.sh --listenaddr 0.0.0.0 --port 3939 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
-```
-
-```shell
-#Linux安装，以app用户运行，监听2020端口
-RUNNER_ADDR=http://10.68.10.60:8084
-cd /tmp
-curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
-bash install.sh --runuser app --listenaddr 0.0.0.0 --port 2020 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
-```
-
-#### Windows
-
-```shell
-#Open cmd.exec in Administrator mode
-cd "%Temp%"
-#use browser downlaod install.vbs to directory:%Temp%
-#http://192.168.0.26:8080/download/tagent-bootstrap/install.vbs
-set RUNNER_ADDR=http://10.68.10.60:8084
-cscript install.vbs /tenant:develop /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/download/tagent_windows_x64.tar /serveraddr:%RUNNER_ADDR% /listenaddr:0.0.0.0 /port:3939
-```
-
-### 手动安装
-
-#### Linux|Unix
-
-上传安装包到服务器，解压到/opt/tagent
-
-```shell
-RUNNER_ADDR=http://10.68.10.60:8084
-mkdir /opt/tagent
-tar -C /opt/tagent -xvf tagent.tar
-cd /opt/tagent/bin
-./setup.sh --action install --listenaddr 0.0.0.0 --port 3939 --tenant develop --serveraddr $RUNNER_ADDR
-```
-
-#### Windows
-
-上传安装包到服务器，解压到c:/tagent
-
-```shell
-set RUNNER_ADDR=http://10.68.10.60:8084
-mkdir c:\tagent
-#解压到c:/tagent
-cd c:\tagent
-service-install.bat %RUNNER_ADDR% develop 0.0.0.0 3939
-```
-
-### 手动卸载
-
-#### Linux|Unix
-
-```shell
-cd /opt/tagent/bin
-bash setup.sh --action uninstall
+# 定义runner变量
+RUNNER_ADDR=http://192.168.0.10:8084 #Neatlogic-runner的IP和端口
 cd /opt
-rm -rf /opt/tagent
+# 下载安装脚本
+curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
+
+# 执行安装
+bash install.sh --tenant demo --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
 ```
 
-#### Windows
-
-```shell
-cd c:\tagent
-service-uninstall.bat
-rd /s /q c:\tagent
+* Windows类安装示例
+```powershell
+# 打开浏览器输入runner地址下载install.vbs，如：http://192.168.0.10:8080/autoexecrunner/tagent/download/install.vbs
+# 以管理员打开cmd窗口
+# 切换install.vbs所在目录，或拷贝install.vbs到"%Temp%"目录
+# 执行安装
+set RUNNER_ADDR=http://192.168.0.10:8084
+cscript install.vbs /tenant:demo /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/download/tagent_windows_x64.tar /serveraddr:%RUNNER_ADDR% 
 ```
+
+## 如何卸载
+* Linux | SUSE | Aix |Unix 类服务卸载
+```bash
+# 查看Shell类型
+echo $0
+
+# Shell为bash
+sh tagent/bin/setup.sh --action uninstall
+
+# Shell为ksh
+sh tagent/bin/setup.ksh --action uninstall
+
+```
+
+* Windows类服务卸载
+
+以管理员权限打开cmd窗口，切换到tagent_windows_x64安装目录，执行：service-uninstall.bat</li>
+
+
+## 网络策略
+<table>
+    <tr>
+        <th>源IP</th>
+        <th>目的IP</th>
+        <th>目的端口</th>
+        <th>协议</th>
+        <th>备注</th>
+    </tr>
+    <tr>
+        <td>Agent主机</td>
+        <td>runner主机</td>
+        <td>8084/8888</td>
+        <td>TCP</td>
+        <td>
+            8084注册端口/
+            8888心跳端口
+        </td>
+    </tr>
+    <tr>
+        <td>runner主机</td>
+        <td>Agent主机</td>
+        <td>3939</td>
+        <td>TCP</td>
+        <td>命令下发端口</td>
+    </tr>
+</table>
