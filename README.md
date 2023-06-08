@@ -99,11 +99,10 @@ service tagent start/stop
 <li>cd tagent_windows_x64目录，执行：service-install.bat</li>
 </ol>
 
-完整示例：
+示例：
 ```bat
 cd c:\tagent_windows_x64
 service-install.bat
-rd /s /q c:\tagent_windows_x64
 ```
 
 ### 自动安装
@@ -134,6 +133,8 @@ cscript install.vbs /tenant:demo /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/dow
 ## 如何卸载
 * Linux | SUSE | Aix |Unix 类服务卸载
 ```bash
+cd /opt 
+
 # 查看Shell类型
 echo $0
 
@@ -143,11 +144,18 @@ sh tagent/bin/setup.sh --action uninstall
 # Shell为ksh
 sh tagent/bin/setup.ksh --action uninstall
 
+# 删除安装目录
+rm -rf tagent
 ```
 
 * Windows类服务卸载
 
-以管理员权限打开cmd窗口，切换到tagent_windows_x64安装目录，执行：service-uninstall.bat</li>
+以管理员权限打开cmd窗口，切换到tagent_windows_x64安装目录，执行：service-uninstall.bat,并删除安装目录，示例：
+```bat 
+cd c:\tagent_windows_x64
+service-uninstall.bat
+rd /s /q c:\tagent_windows_x64
+```
 
 
 ## 网络策略
