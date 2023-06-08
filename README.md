@@ -16,7 +16,7 @@ Neatlogic-Tagent用于部署在受管目标操作系统上，平滑替代主机�
 <li>对操作系统资源极少，资源范围为：cpu <= 2%,内存：<= 200MB。</li>
 <li>同一受管机器，支持多用户安装。</li>
 <li>与<a href="../../../neatlogic-runner">Neatlogic-runner</a>建立心跳连接，定期探测目标环境和服务可用性。</li>
-<li>支持从<a href="../../../neatlogic-runner">Neatlogic-runner</a>注册、管理、以及自动化匹配管理网段下发执行。</li>
+<li>支持从<a href="../../../neatlogic-runner">Neatlogic-runner</a>注册、管理、以及自动匹配管理网段下发执行。</li>
 <li>支持在<a href="../../../neatlogic-web">Neatlogic-web</a>上查看日志、重启、修改配置、升级等操作。</li>
 </ol>
 
