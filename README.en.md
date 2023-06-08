@@ -10,100 +10,215 @@
 
 ## About
 
-Tagent is used for deployment on the client side, accomplishing complex operations that ssh and others cannot complete.
+Neatlogic-Agent is an optional method for deploying on managed target operating systems, which smoothly replaces host connection protocols. Tagent has the following characteristics:
 
-## Tagent User Guide
+<ol>
+<li>Developed using Perl language, with extremely low runtime dependency requirements</li>
 
-### Installation Packages
+<li>Support common operating systems such as Windows, Linux, SUSE, Aix, etc</li>
 
-Linux｜Unix installation package: tagent_linux.tar
-Windows installation package: tagent_windows_x32.tar, tagent_windows_x64.tar (Windows installation package includes Perl
-runtime and 7z tool)
+<li>There are very few operating system resources, with a resource range of CPU<=2% and memory<=200MB</li>
 
-### Automatic Installation
+<li>The same managed machine supports multi user installation</li>
 
-#### Get install.sh or install.vbs(Windows) from the subdirectory bin
+<li>Establish a heartbeat connection with <a href="../../../netlogic runner">Neatlogic runner</a>, regularly detect the target environment and service availability</li>
 
-Automatic installation requires placing the Tagent installation package somewhere that can be downloaded via HTTP or
-FTP.
-The address and tenant name in the following installation sample scripts need to be modified according to actual
-conditions.
-Variable: RUNNER_ADDR is the URL of the execution node, choose based on whether the network can be connected. As long as
-the network is accessible, choosing any RUNNER will have the same effect.
-Tenant selection, input according to the tenant set by the system installation.
+<li>Support registration, management, and automatic matching management of network segments for execution from <a href="../../../netlogic runner">Neatlogic runner</a></li>
 
-#### Linux|Unix
+<li>Support operations such as viewing logs, restarting, modifying configurations, and upgrading on <a href="../../../netlogic web">Neatlogic web</a></li>
 
-```shell
-#Linux installation, run as root user
-RUNNER_ADDR=http://10.68.10.60:8084
-cd /tmp
-curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
-bash install.sh --listenaddr 0.0.0.0 --port 3939 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
+</ol>
+
+## Applicable scenarios 
+
+There are several common application scenarios for Neatlogic Agent:
+
+<ol>
+<li>Windows class machines</li>
+
+<li>Machine account passwords often change</li>
+
+<li>Multiple accounts on the machine, do not want to maintain different user passwords on the platform</li>
+
+<li>Deep use of automated operation and maintenance, such as resource installation and delivery</li>
+
+</ol>
+
+## How to obtain installation packages 
+
+Neatlogic-Tagent There are two ways to obtain installation packages:
+
+* be based on <a href="../../../neatlogic-tagent-client">Neatlogic-tagent-client</a> project packaging.
+
+```
+Explanation: The Windows installation package contains the Perl runtime dependency environment and 7z tools, as shown in the differences in the installation package below.
 ```
 
-```shell
-#Linux installation, run as app user, listening on port 2020
-RUNNER_ADDR=http://10.68.10.60:8084
-cd /tmp
-curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
-bash install.sh --runuser app --listenaddr 0.0.0.0 --port 2020 --tenant develop --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
+* be based on <a href="../../../neatlogic-runner">Neatlogic-runner</a>Obtain installation package.
+
+```bash
+#####Installation Package Description############
+#Neatlogic runner comes with 3 installation packages
+#Unix class: tagent.tar
+#Windows 32 Class: agent_ Windows_ X32. zip
+#Windows 64 class: agent_ Windows_ X64.zip
+##########################
+
+#Eg: Obtain Unix installation package
+#Format: http://Neatlogic-runner Machine IP: 8084/autoexecutor/agent/download/agent.tar
+
+#Example
+curl tagent.tar http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent.tar
+
+#Eg: Obtain Windows 64 bit installation package
+#Example
+curl tagent_windows_x64.zip http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent_windows_x64.zip
 ```
 
-#### Windows
+## How to install
 
-```shell
-#Open cmd.exec in Administrator mode
-cd "%Temp%"
-#use browser to download install.vbs to directory:%Temp%
-#http://192.168.0.26:8080/download/tagent-bootstrap/install.vbs
-set RUNNER_ADDR=http://10.68.10.60:8084
-cscript install.vbs /tenant:develop /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/download/tagent_windows_x64.tar /serveraddr:%RUNNER_ADDR% /listenaddr:0.0.0.0 /port:3939
-```
+* Unix operating systems are recommended to be installed as root users, and the agent installed by root will register the service.
 
-### Manual Installation
+* The Windows operating system needs to be installed by opening the cmd window in administrative mode.
 
-#### Linux|Unix
+### Manual install
 
-Upload the installation package to the server and unzip it to /opt/tagent
+* Linux | SUSE | Aix |Unix installation 
+```bash 
+# Login to the target managed machine and download the installation package. It is recommended to store it in the /opt directory uniformly
 
-```shell
-RUNNER_ADDR=http://10.68.10.60:8084
-mkdir /opt/tagent
-tar -C /opt/tagent -xvf tagent.tar
-cd /opt/tagent/bin
-./setup.sh --action install --listenaddr 0.0.0.0 --port 3939 --tenant develop --server
-
-addr $RUNNER_ADDR
-```
-
-#### Windows
-
-Upload the installation package to the server and unzip it to c:/tagent
-
-```shell
-set RUNNER_ADDR=http://10.68.10.60:8084
-mkdir c:\tagent
-#unzip to c:/tagent
-cd c:\tagent
-service-install.bat %RUNNER_ADDR% develop 0.0.0.0 3939
-```
-
-### Manual Uninstallation
-
-#### Linux|Unix
-
-```shell
-cd /opt/tagent/bin
-bash setup.sh --action uninstall
 cd /opt
-rm -rf /opt/tagent
+curl tagent.tar http://192.168.0.10:8084/autoexecrunner/tagent/download/tagent.tar
+
+# decompression
+tar -xvf tagent.tar
+
+# View shell kind
+echo $0 #The AIX operating system should be noted that most default is ksh
+
+# Perform installation
+# Parameter Description：--serveraddr neatlogic-runner http access address  --tenant tenant name
+# shell kind is bash，eg
+sh tagent/bin/setup.sh --action install --serveraddr http://192.168.0.10:8084  --tenant demo
+
+# shell kind is ksh，eg
+sh tagent/bin/setup.ksh --action install --serveraddr http://192.168.0.10:8084  --tenant demo
+
+# Installation completion check (3 processes)
+ps -ef |grep tagent 
+
+# view log
+less tagent/run/root/logs/tagent.log 
+
+# view config
+less tagent/run/root/conf/tagent.conf
+
+#start / stop command
+service tagent start/stop 
 ```
 
-#### Windows
+* Windows Installation
+
+<ol>
+<li>Check how many bits of OS the Windows operation is and select the corresponding installation package.</li>
+
+<li>Login to the target managed machine, download the installation package, and copy it to the C drive. It is recommended to store it uniformly in the root directory of the C drive.</li>
+
+<li>Open the cmd window with administrator privileges and switch to the c drive directory.</li>
+
+<li>cd tagent_windows_x64 directory, execute:service-install.bat</li>
+
+</ol>
+
+Example：
+```bat
+cd c:\tagent_windows_x64
+service-install.bat
+```
+
+### Automatic installation
+
+* Linux | SUSE | Aix |Unix installation
 
 ```shell
-cd c:\tagent
-service-uninstall.bat
-rd /s /q c:\tagent
+# Define neatlogic-runner variable
+RUNNER_ADDR=http://192.168.0.10:8084 #Neatlogic runner's IP and port
+cd /opt
+# Download installation script
+curl -o install.sh $RUNNER_ADDR/autoexecrunner/tagent/download/install.sh
+
+# Perform installation
+bash install.sh --tenant demo --pkgurl $RUNNER_ADDR/autoexecrunner/tagent/download/tagent.tar --serveraddr $RUNNER_ADDR
 ```
+
+* Windows installation
+```powershell
+#Open the browser and enter the neatlogic-runner address to download install.vbs, as shown in: http://192.168.0.10:8080/autoexecrunner/tagent/download/install.vbs
+
+#Open cmd window as administrator
+
+#Switch the directory where install.vbs is located, or copy install.vbs to the '% Temp%' directory
+
+#Perform installation
+set RUNNER_ADDR=http://192.168.0.10:8084
+cscript install.vbs /tenant:demo /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/download/tagent_windows_x64.tar /serveraddr:%RUNNER_ADDR% 
+```
+
+## How to uninstall
+
+* Linux | SUSE | Aix |Unix uninstall
+```bash
+cd /opt 
+
+# View shell kind
+echo $0
+
+# Shell kind is bash
+sh tagent/bin/setup.sh --action uninstall
+
+# Shell kind is ksh
+sh tagent/bin/setup.ksh --action uninstall
+
+# Remove installation directory
+rm -rf tagent
+```
+
+* Windows uninstall
+
+Open the cmd window with administrator privileges and switch to agent_ Windows_ X64 installation directory, execute: service uninstall.bat, and delete the installation directory. Example:
+
+```bat 
+cd c:\tagent_windows_x64
+service-uninstall.bat
+rd /s /q c:\tagent_windows_x64
+```
+
+
+## Network Policy
+
+<table style="width:100%">
+    <tr>
+        <th>Source IP</th>
+        <th>Destination IP</th>
+        <th>Port</th>
+        <th>Protocol</th>
+        <th>Description</th>
+    </tr>
+    <tr>
+        <td>neatlogic-tagent-client host</td>
+        <td>neatlogic-runner host</td>
+        <td>8084/8888</td>
+        <td>TCP</td>
+        <td>
+            8084 registration port/
+            8888 Heartbeat Port
+        </td>
+    </tr>
+    <tr>
+        <td>neatlogic-runner host</td>
+        <td>neatlogic-tagent-client host</td>
+        <td>3939</td>
+        <td>TCP</td>
+        <td>Command issue execution port</td>
+    </tr>
+</table>

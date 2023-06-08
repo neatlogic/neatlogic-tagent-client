@@ -16,11 +16,11 @@ Neatlogic-Tagent用于部署在受管目标操作系统上，平滑替代主机�
 <li>对操作系统资源极少，资源范围为：cpu <= 2%,内存：<= 200MB。</li>
 <li>同一受管机器，支持多用户安装。</li>
 <li>与<a href="../../../neatlogic-runner">Neatlogic-runner</a>建立心跳连接，定期探测目标环境和服务可用性。</li>
-<li>支持从<a href="../../../neatlogic-runner">Neatlogic-runner</a>注册、管理、以及自动化匹配管理网段下发执行。</li>
+<li>支持从<a href="../../../neatlogic-runner">Neatlogic-runner</a>注册、管理、以及自动匹配管理网段下发执行。</li>
 <li>支持在<a href="../../../neatlogic-web">Neatlogic-web</a>上查看日志、重启、修改配置、升级等操作。</li>
 </ol>
 
-## 适用于场景 
+## 适用场景 
 Neatlogic-Tagent常见几种适用场景：
 <ol>
 <li>Windows类机器。</li>
@@ -99,11 +99,10 @@ service tagent start/stop
 <li>cd tagent_windows_x64目录，执行：service-install.bat</li>
 </ol>
 
-完整示例：
+示例：
 ```bat
 cd c:\tagent_windows_x64
 service-install.bat
-rd /s /q c:\tagent_windows_x64
 ```
 
 ### 自动安装
@@ -134,6 +133,8 @@ cscript install.vbs /tenant:demo /pkgurl:%RUNNER_ADDR%/autoexecrunner/tagent/dow
 ## 如何卸载
 * Linux | SUSE | Aix |Unix 类服务卸载
 ```bash
+cd /opt 
+
 # 查看Shell类型
 echo $0
 
@@ -143,15 +144,22 @@ sh tagent/bin/setup.sh --action uninstall
 # Shell为ksh
 sh tagent/bin/setup.ksh --action uninstall
 
+# 删除安装目录
+rm -rf tagent
 ```
 
 * Windows类服务卸载
 
-以管理员权限打开cmd窗口，切换到tagent_windows_x64安装目录，执行：service-uninstall.bat</li>
+以管理员权限打开cmd窗口，切换到tagent_windows_x64安装目录，执行：service-uninstall.bat,并删除安装目录，示例：
+```bat 
+cd c:\tagent_windows_x64
+service-uninstall.bat
+rd /s /q c:\tagent_windows_x64
+```
 
 
 ## 网络策略
-<table>
+<table style="width:100%">
     <tr>
         <th>源IP</th>
         <th>目的IP</th>
@@ -160,8 +168,8 @@ sh tagent/bin/setup.ksh --action uninstall
         <th>备注</th>
     </tr>
     <tr>
-        <td>Agent主机</td>
-        <td>runner主机</td>
+        <td>neatlogic-tagent-client主机</td>
+        <td>neatlogic-runner主机</td>
         <td>8084/8888</td>
         <td>TCP</td>
         <td>
@@ -170,8 +178,8 @@ sh tagent/bin/setup.ksh --action uninstall
         </td>
     </tr>
     <tr>
-        <td>runner主机</td>
-        <td>Agent主机</td>
+        <td>neatlogic-runner主机</td>
+        <td>neatlogic-tagent-client主机</td>
         <td>3939</td>
         <td>TCP</td>
         <td>命令下发端口</td>
