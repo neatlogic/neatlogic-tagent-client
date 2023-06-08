@@ -20,7 +20,7 @@ Neatlogic-Tagent用于部署在受管目标操作系统上，平滑替代主机�
 <li>支持在<a href="../../../neatlogic-web">Neatlogic-web</a>上查看日志、重启、修改配置、升级等操作。</li>
 </ol>
 
-## 适用于场景 
+## 适用场景 
 Neatlogic-Tagent常见几种适用场景：
 <ol>
 <li>Windows类机器。</li>
@@ -159,7 +159,7 @@ rd /s /q c:\tagent_windows_x64
 
 
 ## 网络策略
-<table>
+<table style="width:100%">
     <tr>
         <th>源IP</th>
         <th>目的IP</th>
@@ -168,8 +168,8 @@ rd /s /q c:\tagent_windows_x64
         <th>备注</th>
     </tr>
     <tr>
-        <td>Agent主机</td>
-        <td>runner主机</td>
+        <td>neatlogic-tagent-client主机</td>
+        <td>neatlogic-runner主机</td>
         <td>8084/8888</td>
         <td>TCP</td>
         <td>
@@ -178,8 +178,8 @@ rd /s /q c:\tagent_windows_x64
         </td>
     </tr>
     <tr>
-        <td>runner主机</td>
-        <td>Agent主机</td>
+        <td>neatlogic-runner主机</td>
+        <td>neatlogic-tagent-client主机</td>
         <td>3939</td>
         <td>TCP</td>
         <td>命令下发端口</td>
