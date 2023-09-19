@@ -13,6 +13,7 @@ use Errno qw(ETIMEDOUT EWOULDBLOCK EINTR);
 use HTTP::Tiny;
 use IO::Socket::INET;
 use IO::Select;
+use Net::Subnet;
 
 use JSON;
 use TagentClient;
@@ -36,7 +37,7 @@ sub randPass {
     my ($self) = @_;
 
     my @chars = ( 'A' .. 'Z', 'a' .. 'z', '0' .. '9' );
-    my $pass  = '';
+    my $pass = '';
 
     for ( my $i = 0 ; $i < 16 ; $i++ ) {
         $pass = $pass . $chars[ rand @chars ];
@@ -219,7 +220,7 @@ sub new {
 }
 
 sub getVersion {
-    return '1.5.3';
+    return '1.5.4';
 }
 
 sub _getWinScriptExt {
@@ -249,6 +250,30 @@ sub _getWinScriptExt {
     }
 
     return $extName;
+}
+
+sub getMgmtIp {
+    my ( $self, $ipstr ) = @_;
+    my $config = $self->{config}->{_};
+    my $logger = $self->{logger};
+
+    my $registerSubnet = $config->{'register.subnet'};
+    my $mgmtIp;
+    if ( defined($registerSubnet) and $registerSubnet ne '' ) {
+        my @subnets        = split( /,/, $registerSubnet );
+        my $subnet_network = subnet_matcher(@subnets);
+        my @ips            = split( /,/, $ipstr );
+        foreach my $ip (@ips) {
+
+            #&$logger("Debug: check ip $ip in manage subnet $registerSubnet .\n");
+            my $inNetwork = $subnet_network->($ip);
+            if ($inNetwork) {
+                $mgmtIp = $ip;
+                last;
+            }
+        }
+    }
+    return $mgmtIp;
 }
 
 sub register {
@@ -351,6 +376,11 @@ sub register {
         osbit      => $osbit,
         credential => $credential
     };
+    my $mgmtIp = $self->getMgmtIp($ipString);
+    if ( defined($mgmtIp) and $mgmtIp ne '' ) {
+        &$logger("INFO: get tagent manage subnet register ip: $mgmtIp .\n");
+        $postData->{mgmtIp} = $mgmtIp;
+    }
 
     if ( defined($registerAddress) and $registerAddress ne '' ) {
         &$logger("INFO: try to register, register address is $registerAddress, tagent:$user:$port\n");
@@ -375,13 +405,13 @@ sub register {
                 #&$logger( "DEBUG: post data is :".from_json($postData). "end\n" );
                 my @proxyAddresses = split( /\s*,\s*/, $registerAddress );
                 if ( scalar(@proxyAddresses) > 1 ) {
-                    my $startIdx       = $ipHashVal % scalar(@proxyAddresses);
+                    my $startIdx = $ipHashVal % scalar(@proxyAddresses);
                     my @headProxyAddrs = splice( @proxyAddresses, 0, $startIdx );
                     push( @proxyAddresses, @headProxyAddrs );
                 }
 
                 foreach my $proxyAddress (@proxyAddresses) {
-                    my $http     = HTTP::Tiny->new( timeout => 15 );
+                    my $http = HTTP::Tiny->new( timeout => 15 );
                     my $response = $http->post(
                         $proxyAddress => {
                             content => to_json($postData),
@@ -478,7 +508,7 @@ sub getConnection {
             eval(q{$socketType = Socket::SOCK_STREAM | Socket::SOCK_CLOEXEC;});
         }
 
-        my @proxyList  = split( /,/, $group );
+        my @proxyList = split( /,/, $group );
         my $proxyCount = scalar(@proxyList);
 
         #根据tagentId的值进行proxy的优先选择
@@ -555,7 +585,7 @@ sub _resetCred {
     my $config = $self->{config}->{_};
     my $logger = $self->{logger};
 
-    my $newPass          = $self->randPass();
+    my $newPass = $self->randPass();
     my $authKeyEncrypted = '{ENCRYPTED}' . _rc4_encrypt_hex( $self->{MY_KEY}, $newPass );
 
     $config->{'credential'} = $authKeyEncrypted;
@@ -718,7 +748,7 @@ sub _updateAppsConf {
             }
         }
 
-        my %validKeys  = map { $_ => 1 } @keysTmp, keys(%$myOsConf);
+        my %validKeys = map { $_ => 1 } @keysTmp, keys(%$myOsConf);
         my @scriptKeys = keys(%validKeys);
 
         foreach my $scriptKey (@scriptKeys) {
@@ -912,7 +942,7 @@ sub getWinProcCpuAndMem {
     my $bCpuTime = $proc->{UserModeTime} + $proc->{KernelModeTime};
 
     my $cpuPercent = sprintf( '%.2f', ( $bCpuTime - $aCpuTime ) / $ENV{"NUMBER_OF_PROCESSORS"} / 10000000 * 100 );
-    my $memSize    = sprintf( '%.2f', $proc->{WorkingSetSize} / 1024 / 1024 );
+    my $memSize = sprintf( '%.2f', $proc->{WorkingSetSize} / 1024 / 1024 );
 
     return ( sprintf( '%.2f', $cpuPercent ), sprintf( '%.2f', $memSize ) );
 }
@@ -960,7 +990,7 @@ sub getPosixProcCpuAndMem {
                 $line =~ s/^\s+//;
                 my ( $p, $m ) = split( /\s+/, $line );
                 $pcpu = $pcpu + sprintf( '%.2f', $p );
-                $mem  = $mem + sprintf( '%.2f', $m );
+                $mem = $mem + sprintf( '%.2f', $m );
             }
             close($procInfo);
         }
@@ -1517,11 +1547,12 @@ sub mainLoop {
 
         if ( defined($conn) and defined($agentId) and $agentId ne '' ) {
             my $statusInfo = {};
+            my $ipString   = collectIp();
             $statusInfo->{type}         = 'monitor';
             $statusInfo->{tenant}       = $tenant;
             $statusInfo->{agentId}      = int($agentId);
             $statusInfo->{port}         = int($port);
-            $statusInfo->{ipString}     = collectIp();
+            $statusInfo->{ipString}     = $ipString;
             $statusInfo->{proxyGroup}   = $proxyGroup;
             $statusInfo->{proxyGroupId} = $proxyGroupId;
             $statusInfo->{proxyIp}      = $self->{proxyIp};
@@ -1530,6 +1561,12 @@ sub mainLoop {
             $statusInfo->{mem}          = $mem * 1;
             $statusInfo->{status}       = $status;
             $statusInfo->{version}      = getVersion();
+
+            my $mgmtIp = $self->getMgmtIp($ipString);
+            if ( defined($mgmtIp) and $mgmtIp ne '' ) {
+                &$logger("INFO: get tagent manage subnet register ip: $mgmtIp .\n");
+                $statusInfo->{mgmtIp} = $mgmtIp;
+            }
 
             eval {
                 &$logger("INFO: begin to check managed app.\n");
@@ -1609,4 +1646,3 @@ sub mainLoop {
 }
 
 1;
-
