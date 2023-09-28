@@ -31,7 +31,7 @@ Neatlogic-Tagent常见几种适用场景：
 
 ## 如何获取安装包 
 Neatlogic-Tagent两种获取安装包：
-* [tagent](../../../tagent)获取各类型的安装包
+* [tagent](../../../neatlogic-itom-all/blob/develop3.0.0/tagent)获取各类型的安装包
 ```
 #非windows
 tagent.tar 
