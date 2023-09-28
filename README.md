@@ -31,9 +31,14 @@ Neatlogic-Tagent常见几种适用场景：
 
 ## 如何获取安装包 
 Neatlogic-Tagent两种获取安装包：
-* 基于<a href="../../../neatlogic-tagent-client">Neatlogic-tagent-client</a>工程打包。
+* [tagent](../../../tagent)获取各类型的安装包
 ```
-说明：windows安装包内嵌了Perl运行时依赖环境和7z工具，详见下面安装包内差异。
+#非windows
+tagent.tar 
+#windows 32位
+tagent_windows_x32.zip
+#windows 64位
+tagent_windows_x64.zip
 ```
 
 * 从<a href="../../../neatlogic-runner">Neatlogic-runner</a>获取安装包
