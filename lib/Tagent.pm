@@ -19,7 +19,7 @@ use IO::Select;
 use POSIX qw(:sys_wait_h WNOHANG setsid uname);
 use Fcntl;
 use constant ERROR_BROKEN_PIPE => 109;
-use Socket qw( AF_UNIX SOCK_STREAM PF_UNSPEC );
+use Socket qw( AF_UNIX SOCK_STREAM PF_UNSPEC SOL_SOCKET SO_KEEPALIVE IPPROTO_TCP TCP_KEEPCNT TCP_KEEPIDLE TCP_KEEPINTVL);
 use File::Glob qw(bsd_glob);
 
 use JSON;
@@ -344,13 +344,18 @@ sub new {
     $self->{writeTimeout} = $writeTimeout;
 
     my $execTimeout = $self->{config}->{_}->{'exec.timeout'};
-    if ( not defined($execTimeout) or $execTimeout eq '' ) {
+    $execTimeout = int($execTimeout);
+    if ( not defined($execTimeout) or $execTimeout == 0 ) {
         $execTimeout = 3600;
     }
-    else {
-        $execTimeout = int($execTimeout);
-    }
     $self->{execTimeout} = $execTimeout;
+
+    my $tcpKeepAliveInterval = $self->{config}->{_}->{'tcp.keepalive.interval'};
+    $tcpKeepAliveInterval = int($tcpKeepAliveInterval);
+    if ( not defined($tcpKeepAliveInterval) or $tcpKeepAliveInterval == 0 ) {
+        $tcpKeepAliveInterval = 300;
+    }
+    $self->{tcpKeepAliveInterval} = $tcpKeepAliveInterval;
 
     $self->_purgeLog();
 
@@ -2142,6 +2147,24 @@ sub start {
                 my $_dont_inherit = $self->{_dont_inherit};
                 if ( defined($_dont_inherit) ) {
                     &$_dont_inherit($clientSocket);
+                }
+
+                my $tcpKeepAliveInterval = $self->{tcpKeepAliveInterval};
+                if ( $self->{ostype} eq 'windows' ) {
+                    my $SIO_KEEPALIVE_VALS = 2550136836;    #Socket::SIO_KEEPALIVE_VALS没有，从别的地方找到这个数值
+                    ioctl( $clientSocket, $SIO_KEEPALIVE_VALS, pack( 'LLL', 1, $tcpKeepAliveInterval * 1000, $tcpKeepAliveInterval ) );
+                }
+                elsif ( $self->{ostype} eq 'Darwin' ) {
+
+                    #TCP_KEEPALIVE在Mac中的数值是0x10
+                    setsockopt( $clientSocket, SOL_SOCKET,  SO_KEEPALIVE, 1 );
+                    setsockopt( $clientSocket, IPPROTO_TCP, 0x10,         $tcpKeepAliveInterval );
+                }
+                else {
+                    setsockopt( $clientSocket, SOL_SOCKET,  SO_KEEPALIVE,  1 );
+                    setsockopt( $clientSocket, IPPROTO_TCP, TCP_KEEPCNT,   3 );
+                    setsockopt( $clientSocket, IPPROTO_TCP, TCP_KEEPIDLE,  $tcpKeepAliveInterval );
+                    setsockopt( $clientSocket, IPPROTO_TCP, TCP_KEEPINTVL, $tcpKeepAliveInterval );
                 }
 
                 # get the host and port number of newly connected client.
